@@ -5,14 +5,16 @@ const GOOGLE_SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ
 // --- Global Variables ---
 let allData = []; // Stores all raw data from the sheet
 let filteredData = []; // Stores data after applying filters
-let currentPage = 1;
-const rowsPerPage = 10; // Number of entries per page
+let expenseChart; // Chart.js instance
 
 // --- DOM Elements ---
-const dataTableBody = document.getElementById('dataTableBody');
+const bodyElement = document.body;
 const totalEntriesElem = document.getElementById('totalEntries');
 const totalIncomeElem = document.getElementById('totalIncome');
 const totalExpensesElem = document.getElementById('totalExpenses');
+const expenseChartCanvas = document.getElementById('expenseChart');
+const noChartDataMessage = document.getElementById('noChartDataMessage');
+
 
 // Filter elements
 const startDateInput = document.getElementById('startDate');
@@ -31,11 +33,8 @@ const timePeriodButtons = [
     document.getElementById('allTime')
 ];
 
-// Pagination elements
-const prevPageBtn = document.getElementById('prevPageBtn');
-const nextPageBtn = document.getElementById('nextPageBtn');
-const currentPageSpan = document.getElementById('currentPage');
-const totalPagesSpan = document.getElementById('totalPages');
+// Theme toggle button
+const themeToggleButton = document.getElementById('themeToggleButton');
 
 // --- Functions ---
 
@@ -79,77 +78,29 @@ async function fetchData() {
         applyFilters(); // Apply initial filters (e.g., "All Time")
     } catch (error) {
         console.error('Error fetching or parsing data:', error);
-        dataTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-red-500">Error loading data. Please check your sheet URL and permissions.</td></tr>`;
+        // Display error message where chart would be
+        expenseChartCanvas.style.display = 'none';
+        noChartDataMessage.textContent = 'Error loading data. Please check your sheet URL and browser console.';
+        noChartDataMessage.classList.remove('hidden');
+
         totalEntriesElem.textContent = 'N/A';
-        totalIncomeElem.textContent = '$N/A';
-        totalExpensesElem.textContent = '$N/A';
+        totalIncomeElem.textContent = '₱N/A';
+        totalExpensesElem.textContent = '₱N/A';
     }
 }
 
 /**
- * Formats a number as currency.
+ * Formats a number as Philippine Peso currency.
  * @param {number} amount - The numeric amount.
  * @returns {string} - Formatted currency string.
  */
 function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-PH', { // 'en-PH' for Philippines English locale
         style: 'currency',
-        currency: 'USD',
+        currency: 'PHP', // Philippine Peso
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     }).format(amount);
-}
-
-/**
- * Renders the data table for the current page.
- */
-function renderTable() {
-    dataTableBody.innerHTML = ''; // Clear existing rows
-
-    if (filteredData.length === 0) {
-        dataTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-gray-500">No entries found for the selected filters.</td></tr>`;
-        updatePaginationControls();
-        updateSummary(0, 0, 0); // Reset summary
-        return;
-    }
-
-    const start = (currentPage - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    const paginatedData = filteredData.slice(start, end);
-
-    let currentTotalIncome = 0;
-    let currentTotalExpenses = 0;
-
-    paginatedData.forEach(entry => {
-        const row = document.createElement('tr');
-        row.classList.add('dark-table-row');
-
-        // Parse amount as float for calculations
-        const amount = parseFloat(entry.Amount) || 0;
-
-        // Determine text color based on Type (Income/Expense)
-        let amountTextColorClass = '';
-        if (entry.Type && entry.Type.toLowerCase() === 'income') {
-            amountTextColorClass = 'text-green-400';
-            currentTotalIncome += amount;
-        } else if (entry.Type && entry.Type.toLowerCase() === 'expense') {
-            amountTextColorClass = 'text-red-400';
-            currentTotalExpenses += amount;
-        }
-
-        row.innerHTML = `
-            <td class="py-2 px-4" data-label="Timestamp">${entry.Timestamp}</td>
-            <td class="py-2 px-4" data-label="Date">${entry.Date}</td>
-            <td class="py-2 px-4" data-label="Category">${entry.Category}</td>
-            <td class="py-2 px-4" data-label="Type">${entry.Type}</td>
-            <td class="py-2 px-4 ${amountTextColorClass}" data-label="Amount">${formatCurrency(amount)}</td>
-            <td class="py-2 px-4" data-label="Remarks">${entry.Remarks}</td>
-        `;
-        dataTableBody.appendChild(row);
-    });
-
-    updatePaginationControls();
-    updateSummary(filteredData.length, currentTotalIncome, currentTotalExpenses); // Summary for *filtered* data
 }
 
 /**
@@ -174,11 +125,12 @@ function applyFilters() {
     const typeFilter = typeFilterSelect.value.toLowerCase();
 
     filteredData = allData.filter(entry => {
-        const entryDate = new Date(entry.Date + 'T00:00:00'); // Assuming 'Date' is in YYYY-MM-DD format
+        // Ensure Date is valid before creating Date object
+        const entryDate = entry.Date ? new Date(entry.Date + 'T00:00:00') : null;
 
-        const matchesDate = (!startDate || entryDate >= startDate) && (!endDate || entryDate <= endDate);
-        const matchesCategory = !categoryFilter || entry.Category.toLowerCase().includes(categoryFilter);
-        const matchesType = !typeFilter || entry.Type.toLowerCase() === typeFilter;
+        const matchesDate = (!startDate || !entryDate || entryDate >= startDate) && (!endDate || !entryDate || entryDate <= endDate);
+        const matchesCategory = !categoryFilter || (entry.Category && entry.Category.toLowerCase().includes(categoryFilter));
+        const matchesType = !typeFilter || (entry.Type && entry.Type.toLowerCase() === typeFilter);
 
         return matchesDate && matchesCategory && matchesType;
     });
@@ -196,8 +148,7 @@ function applyFilters() {
     });
     updateSummary(filteredData.length, overallFilteredIncome, overallFilteredExpenses);
 
-    currentPage = 1; // Reset to first page after applying filters
-    renderTable();
+    renderChart(); // Render chart after applying filters
 }
 
 /**
@@ -229,7 +180,7 @@ function setActiveTimePeriodButton(activeId) {
 
 /**
  * Sets date range for quick filter buttons.
- * @param {number} days - Number of days back from today.
+ * @param {number|string} days - Number of days back from today or 'all'.
  */
 function setDateRange(days) {
     const today = new Date();
@@ -247,16 +198,134 @@ function setDateRange(days) {
 }
 
 /**
- * Updates pagination button states and text.
+ * Renders the expense distribution chart.
  */
-function updatePaginationControls() {
-    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-    currentPageSpan.textContent = currentPage;
-    totalPagesSpan.textContent = totalPages === 0 ? 1 : totalPages; // Ensure at least 1 page shown
+function renderChart() {
+    const expensesByCategory = {};
+    let totalExpenseAmount = 0;
 
-    prevPageBtn.disabled = currentPage === 1;
-    nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+    filteredData.forEach(entry => {
+        if (entry.Type && entry.Type.toLowerCase() === 'expense') {
+            const category = entry.Category || 'Uncategorized';
+            const amount = parseFloat(entry.Amount) || 0;
+            expensesByCategory[category] = (expensesByCategory[category] || 0) + amount;
+            totalExpenseAmount += amount;
+        }
+    });
+
+    const chartLabels = Object.keys(expensesByCategory);
+    const chartData = Object.values(expensesByCategory);
+
+    if (totalExpenseAmount === 0 || chartLabels.length === 0) {
+        if (expenseChart) {
+            expenseChart.destroy(); // Destroy old chart if no data
+        }
+        expenseChartCanvas.style.display = 'none';
+        noChartDataMessage.classList.remove('hidden');
+        return;
+    } else {
+        expenseChartCanvas.style.display = 'block';
+        noChartDataMessage.classList.add('hidden');
+    }
+
+    // Generate vibrant colors dynamically
+    const backgroundColors = chartLabels.map((_, i) => {
+        const hue = (i * 137.508) % 360; // Use golden angle approximation for distinct hues
+        return `hsl(${hue}, 70%, 50%)`;
+    });
+    const borderColors = backgroundColors.map(color => color.replace('50%)', '40%)')); // Slightly darker border
+
+    const ctx = expenseChartCanvas.getContext('2d');
+
+    if (expenseChart) {
+        expenseChart.data.labels = chartLabels;
+        expenseChart.data.datasets[0].data = chartData;
+        expenseChart.data.datasets[0].backgroundColor = backgroundColors;
+        expenseChart.data.datasets[0].borderColor = borderColors;
+        expenseChart.update();
+    } else {
+        expenseChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    data: chartData,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // Allows flexible sizing
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: bodyElement.classList.contains('light-mode') ? '#2d3748' : '#e2e8f0', // Adjust legend text color based on theme
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                const label = tooltipItem.label || '';
+                                const value = tooltipItem.raw || 0;
+                                const percentage = ((value / totalExpenseAmount) * 100).toFixed(2);
+                                return `${label}: ${formatCurrency(value)} (${percentage}%)`;
+                            }
+                        }
+                    },
+                    title: {
+                        display: false,
+                        text: 'Expense Distribution by Category',
+                        color: bodyElement.classList.contains('light-mode') ? '#2d3748' : '#e2e8f0'
+                    }
+                }
+            }
+        });
+    }
+
+    // Update chart legend color on theme change
+    if (expenseChart) {
+        expenseChart.options.plugins.legend.labels.color = bodyElement.classList.contains('light-mode') ? '#2d3748' : '#e2e8f0';
+        expenseChart.update();
+    }
 }
+
+
+/**
+ * Toggles between dark and light mode.
+ */
+function toggleTheme() {
+    if (bodyElement.classList.contains('light-mode')) {
+        bodyElement.classList.remove('light-mode');
+        localStorage.setItem('theme', 'dark');
+    } else {
+        bodyElement.classList.add('light-mode');
+        localStorage.setItem('theme', 'light');
+    }
+    // Re-render chart to update legend color if theme changes
+    if (expenseChart) {
+        expenseChart.options.plugins.legend.labels.color = bodyElement.classList.contains('light-mode') ? '#2d3748' : '#e2e8f0';
+        expenseChart.update();
+    }
+}
+
+/**
+ * Applies saved theme preference on load.
+ */
+function applySavedTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        bodyElement.classList.add('light-mode');
+    } else {
+        bodyElement.classList.remove('light-mode'); // Default to dark if no preference or 'dark'
+    }
+}
+
 
 // --- Event Listeners ---
 
@@ -284,22 +353,6 @@ document.getElementById('allTime').addEventListener('click', () => {
     setDateRange('all');
 });
 
-// Pagination buttons
-prevPageBtn.addEventListener('click', () => {
-    if (currentPage > 1) {
-        currentPage--;
-        renderTable();
-    }
-});
-
-nextPageBtn.addEventListener('click', () => {
-    const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-    if (currentPage < totalPages) {
-        currentPage++;
-        renderTable();
-    }
-});
-
 // When custom date inputs change, deactivate quick buttons
 startDateInput.addEventListener('change', () => {
     timePeriodButtons.forEach(button => {
@@ -315,6 +368,12 @@ endDateInput.addEventListener('change', () => {
     });
 });
 
+// Theme toggle button
+themeToggleButton.addEventListener('click', toggleTheme);
 
-// Initial data fetch when the page loads
-document.addEventListener('DOMContentLoaded', fetchData);
+
+// Initial data fetch and theme application when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    applySavedTheme(); // Apply theme before fetching data
+    fetchData();
+});
