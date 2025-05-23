@@ -1,9 +1,9 @@
 // IMPORTANT: Replace this with the Web app URL you got from Google Apps Script deployment
-const GOOGLE_APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE'; // e.g., 'https://script.google.com/macros/s/AKfycb.../exec'
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz_sJb-XK4B0goS0YdWeOknMWhWj2_uPX_k4MoxgyTMWXo7deU2bF0Zg6pMNJjB0b2_k/exec';
 
 let allTransactions = [];
-let expensesByCategoryChart;
-let gainsByCategoryChart;
+let expensesByCategoryChart; // Keep these for clarity if you want specific control
+let gainsByCategoryChart;   // over their Chart.js instances.
 let balanceTrendChart;
 
 const elements = {
@@ -18,11 +18,11 @@ const elements = {
     netBalanceSpan: document.getElementById('netBalance'),
     transactionsList: document.getElementById('transactionsList'),
     noTransactionsMessage: document.getElementById('noTransactionsMessage'),
-    themeToggleBtn: document.getElementById('themeToggle') // New: Theme toggle button
+    themeToggleBtn: document.getElementById('themeToggle'),
+    themeIcon: document.getElementById('themeIcon')
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize theme based on user's preference or saved setting
     initializeTheme();
     elements.themeToggleBtn.addEventListener('click', toggleTheme);
 
@@ -35,13 +35,13 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeTheme() {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) {
-        document.body.className = savedTheme; // Apply saved theme
+        document.body.className = savedTheme;
     } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        document.body.className = 'dark-mode'; // Apply system dark mode if preferred
+        document.body.className = 'dark-mode';
     } else {
-        document.body.className = 'light-mode'; // Default to light mode
+        document.body.className = 'light-mode';
     }
-    updateThemeToggleButtonText();
+    updateThemeIcon();
 }
 
 function toggleTheme() {
@@ -52,16 +52,18 @@ function toggleTheme() {
         document.body.className = 'light-mode';
         localStorage.setItem('theme', 'light-mode');
     }
-    updateThemeToggleButtonText();
-    // Re-render charts to update their colors
+    updateThemeIcon();
+    // Re-render charts to update their colors and scales
     applyFilters();
 }
 
-function updateThemeToggleButtonText() {
+function updateThemeIcon() {
     if (document.body.classList.contains('dark-mode')) {
-        elements.themeToggleBtn.textContent = 'Switch to Light Mode';
+        elements.themeIcon.textContent = 'light_mode'; // Sun icon for light mode
+        elements.themeToggleBtn.setAttribute('title', 'Switch to Light Mode');
     } else {
-        elements.themeToggleBtn.textContent = 'Switch to Dark Mode';
+        elements.themeIcon.textContent = 'dark_mode'; // Moon icon for dark mode
+        elements.themeToggleBtn.setAttribute('title', 'Switch to Dark Mode');
     }
 }
 // --- End Theme Toggling Logic ---
@@ -85,35 +87,33 @@ async function fetchDataAndRender() {
 
 function preprocessData(data) {
     return data.map(item => ({
-        timestamp: new Date(item.Timestamp), // Google Form's timestamp
-        date: parseDateString(item.Date), // Assuming 'Date' column is a proper date format
+        timestamp: new Date(item.Timestamp),
+        date: parseDateString(item.Date),
         amount: parseFloat(item.Amount || 0),
         type: item.Type,
-        category: item['What kind?'] // Accessing column with spaces
-    })).sort((a, b) => b.timestamp - a.timestamp); // Sort by most recent first
+        category: item['What kind?']
+    })).sort((a, b) => b.timestamp - a.timestamp);
 }
 
 function parseDateString(dateStr) {
-    // Attempt to parse various common date formats
     const formats = [
-        'MM/dd/yyyy', // 05/23/2025
-        'yyyy-MM-dd', // 2025-05-23
-        'MMM dd, yyyy', // May 23, 2025
-        'dd MMM yyyy' // 23 May 2025
+        'MM/dd/yyyy',
+        'yyyy-MM-dd',
+        'MMM dd,PPPP', // Using PPPP for full year, like "May 23, 2025"
+        'dd MMM PPPP'  // Using PPPP for full year, like "23 May 2025"
     ];
     for (const format of formats) {
         const parsed = dateFns.parse(dateStr, format, new Date());
-        if (!isNaN(parsed.getTime())) { // Check if parsed date is valid
+        if (!isNaN(parsed.getTime())) {
             return parsed;
         }
     }
-    // Fallback if none of the above work, try JavaScript's default Date constructor
     const fallbackDate = new Date(dateStr);
     if (!isNaN(fallbackDate.getTime())) {
         return fallbackDate;
     }
     console.warn('Could not parse date:', dateStr);
-    return new Date(0); // Return a default invalid date (epoch)
+    return new Date(0);
 }
 
 
@@ -184,7 +184,6 @@ function updateSummary(transactions) {
     elements.totalGainsSpan.textContent = formatCurrency(totalGains);
     elements.netBalanceSpan.textContent = formatCurrency(netBalance);
 
-    // Apply class for styling net balance
     elements.netBalanceSpan.classList.remove('negative');
     if (netBalance < 0) {
         elements.netBalanceSpan.classList.add('negative');
@@ -192,21 +191,21 @@ function updateSummary(transactions) {
 }
 
 function updateCharts(transactions) {
-    // Expenses by Category
+    // Expenses by Category (Donut Chart)
     const expensesMap = {};
     transactions.filter(t => t.type === 'Expenses').forEach(t => {
         expensesMap[t.category] = (expensesMap[t.category] || 0) + t.amount;
     });
     renderPieChart('expensesByCategoryChart', 'Expenses by Category', Object.keys(expensesMap), Object.values(expensesMap), 'Expenses');
 
-    // Gains by Category
+    // Gains by Category (Donut Chart)
     const gainsMap = {};
     transactions.filter(t => t.type === 'Gains').forEach(t => {
         gainsMap[t.category] = (gainsMap[t.category] || 0) + t.amount;
     });
     renderPieChart('gainsByCategoryChart', 'Gains by Category', Object.keys(gainsMap), Object.values(gainsMap), 'Gains');
 
-    // Balance Trend
+    // Balance Trend (Line Chart)
     const balanceData = calculateBalanceTrend(transactions);
     renderLineChart('balanceTrendChart', 'Overall Balance Trend', balanceData.labels, balanceData.balances);
 }
@@ -214,31 +213,46 @@ function updateCharts(transactions) {
 function renderPieChart(canvasId, title, labels, data, type) {
     const ctx = document.getElementById(canvasId).getContext('2d');
     if (window[canvasId + 'ChartInstance']) {
-        window[canvasId + 'ChartInstance'].destroy(); // Destroy previous instance
+        window[canvasId + 'ChartInstance'].destroy();
     }
 
     const currentTheme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
 
-    // Define colors based on theme
-    const darkColors = {
-        expenses: ['#9C27B0', '#673AB7', '#2196F3', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107'], // Purples, blues, greens, yellows
-        gains: ['#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B'], // Greens, yellows, oranges, browns, grays
-        tooltipBg: 'rgba(0, 0, 0, 0.8)',
-        tooltipText: '#ffffff'
-    };
-    const lightColors = {
-        expenses: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCE', '#F7464A', '#46BFBD', '#FDB45C'],
-        gains: ['#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B'],
-        tooltipBg: 'rgba(0, 0, 0, 0.8)',
-        tooltipText: '#ffffff'
+    const chartColors = {
+        light: {
+            expensesPalette: [
+                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCE', '#F7464A', '#46BFBD', '#FDB45C'
+            ],
+            gainsPalette: [
+                '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B'
+            ],
+            tooltipBg: 'rgba(0, 0, 0, 0.8)',
+            tooltipText: '#ffffff',
+            textColor: '#333'
+        },
+        dark: {
+            expensesPalette: [
+                '#9C27B0', '#673AB7', '#2196F3', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107'
+            ],
+            gainsPalette: [
+                '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B'
+            ],
+            tooltipBg: 'rgba(255, 255, 255, 0.9)',
+            tooltipText: '#333333',
+            textColor: '#E0E0E0'
+        }
     };
 
-    const selectedColors = currentTheme === 'dark' ? darkColors : lightColors;
-    const backgroundColors = type === 'Expenses' ? selectedColors.expenses : selectedColors.gains;
-    const textColor = currentTheme === 'dark' ? '#E0E0E0' : '#333'; // Text color for labels/title
+    const activePalette = currentTheme === 'dark' ? chartColors.dark : chartColors.light;
+    const backgroundColors = type === 'Expenses' ? activePalette.expensesPalette : activePalette.gainsPalette;
+
+    // Dynamically generate colors if more categories than predefined colors
+    while (backgroundColors.length < labels.length) {
+        backgroundColors.push(getRandomColor());
+    }
 
     window[canvasId + 'ChartInstance'] = new Chart(ctx, {
-        type: 'doughnut',
+        type: 'doughnut', // Changed to 'doughnut' for donut chart
         data: {
             labels: labels,
             datasets: [{
@@ -253,22 +267,50 @@ function renderPieChart(canvasId, title, labels, data, type) {
                 legend: {
                     position: 'top',
                     labels: {
-                        color: textColor // Legend text color
+                        color: activePalette.textColor,
+                        font: {
+                            size: 14 // Larger legend font size
+                        }
                     }
                 },
                 title: {
                     display: true,
                     text: title,
-                    color: textColor // Title text color
+                    color: activePalette.textColor,
+                    font: {
+                        size: 16 // Larger title font size
+                    }
                 },
                 tooltip: {
-                    backgroundColor: selectedColors.tooltipBg,
-                    titleColor: selectedColors.tooltipText,
-                    bodyColor: selectedColors.tooltipText
+                    backgroundColor: activePalette.tooltipBg,
+                    titleColor: activePalette.tooltipText,
+                    bodyColor: activePalette.tooltipText,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed !== null) {
+                                label += formatCurrency(context.parsed);
+                            }
+                            return label;
+                        }
+                    }
                 }
-            }
+            },
+            cutout: '60%' // Makes it a donut chart (60% hole in the center)
         }
     });
+}
+
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
 }
 
 
@@ -301,10 +343,26 @@ function renderLineChart(canvasId, title, labels, data) {
     }
 
     const currentTheme = document.body.classList.contains('dark-mode') ? 'dark' : 'light';
-    const textColor = currentTheme === 'dark' ? '#E0E0E0' : '#333';
-    const gridColor = currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'; // Lighter grid for dark mode
-    const borderColor = currentTheme === 'dark' ? '#8BC34A' : '#4CAF50'; // Green line, slightly different for dark
-    const backgroundColor = currentTheme === 'dark' ? 'rgba(139, 195, 74, 0.2)' : 'rgba(76, 175, 80, 0.2)'; // Fill color
+    const chartColors = {
+        light: {
+            textColor: '#333',
+            gridColor: 'rgba(0, 0, 0, 0.1)',
+            borderColor: '#4CAF50',
+            backgroundColor: 'rgba(76, 175, 80, 0.2)',
+            tooltipBg: 'rgba(0, 0, 0, 0.8)',
+            tooltipText: '#ffffff'
+        },
+        dark: {
+            textColor: '#E0E0E0',
+            gridColor: 'rgba(255, 255, 255, 0.15)',
+            borderColor: '#8BC34A',
+            backgroundColor: 'rgba(139, 195, 74, 0.25)',
+            tooltipBg: 'rgba(255, 255, 255, 0.9)',
+            tooltipText: '#333333'
+        }
+    };
+
+    const activeColors = currentTheme === 'dark' ? chartColors.dark : chartColors.light;
 
     window[canvasId + 'ChartInstance'] = new Chart(ctx, {
         type: 'line',
@@ -313,10 +371,10 @@ function renderLineChart(canvasId, title, labels, data) {
             datasets: [{
                 label: 'Net Balance',
                 data: data,
-                borderColor: borderColor,
-                backgroundColor: backgroundColor,
+                borderColor: activeColors.borderColor,
+                backgroundColor: activeColors.backgroundColor,
                 fill: true,
-                tension: 0.1
+                tension: 0.2
             }]
         },
         options: {
@@ -329,12 +387,27 @@ function renderLineChart(canvasId, title, labels, data) {
                 title: {
                     display: true,
                     text: title,
-                    color: textColor
+                    color: activeColors.textColor,
+                    font: {
+                        size: 16 // Larger title font size
+                    }
                 },
                 tooltip: {
-                    backgroundColor: currentTheme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.8)',
-                    titleColor: '#ffffff',
-                    bodyColor: '#ffffff'
+                    backgroundColor: activeColors.tooltipBg,
+                    titleColor: activeColors.tooltipText,
+                    bodyColor: activeColors.tooltipText,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += formatCurrency(context.parsed.y);
+                            }
+                            return label;
+                        }
+                    }
                 }
             },
             scales: {
@@ -342,18 +415,27 @@ function renderLineChart(canvasId, title, labels, data) {
                     type: 'time',
                     time: {
                         unit: 'day',
-                        tooltipFormat: 'MMM dd, yyyy'
+                        tooltipFormat: 'MMM dd,PPPP', // Consistent date format for tooltip
+                        displayFormats: {
+                            day: 'MMM dd' // Display format on axis
+                        }
                     },
                     title: {
                         display: true,
                         text: 'Date',
-                        color: textColor
+                        color: activeColors.textColor,
+                        font: {
+                            size: 14
+                        }
                     },
                     ticks: {
-                        color: textColor // X-axis tick labels
+                        color: activeColors.textColor,
+                        font: {
+                            size: 12
+                        }
                     },
                     grid: {
-                        color: gridColor // X-axis grid lines
+                        color: activeColors.gridColor
                     }
                 },
                 y: {
@@ -361,13 +443,22 @@ function renderLineChart(canvasId, title, labels, data) {
                     title: {
                         display: true,
                         text: 'Balance',
-                        color: textColor
+                        color: activeColors.textColor,
+                        font: {
+                            size: 14
+                        }
                     },
                     ticks: {
-                        color: textColor // Y-axis tick labels
+                        color: activeColors.textColor,
+                        callback: function(value) { // Format Y-axis labels as currency
+                            return formatCurrency(value);
+                        },
+                        font: {
+                            size: 12
+                        }
                     },
                     grid: {
-                        color: gridColor // Y-axis grid lines
+                        color: activeColors.gridColor
                     }
                 }
             }
@@ -389,8 +480,8 @@ function updateTransactionsList(transactions) {
         li.classList.add(t.type === 'Expenses' ? 'expense' : 'gain');
         li.innerHTML = `
             <div>
-                <strong>${formatDate(t.date)}</strong>
-                <span style="font-size: 0.9em; color: var(--item-text-color);">(${t.category})</span>
+                <strong style="color: var(--text-color);">${formatDate(t.date)}</strong>
+                <span style="font-size: 0.9em; color: var(--item-text-color);">${t.category ? `(${t.category})` : ''}</span>
             </div>
             <span class="amount">${formatCurrency(t.amount)}</span>
         `;
@@ -399,12 +490,13 @@ function updateTransactionsList(transactions) {
 }
 
 function formatCurrency(amount) {
-    return amount.toLocaleString('en-US', { style: 'currency', currency: 'PHP' }); // Use PHP currency
+    // Format as Philippine Peso (PHP)
+    return amount.toLocaleString('en-PH', { style: 'currency', currency: 'PHP', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function formatDate(date) {
     if (!date || isNaN(date.getTime())) {
         return 'Invalid Date';
     }
-    return dateFns.format(date, 'MMM dd, yyyy');
+    return dateFns.format(date, 'MMM dd,PPPP'); // Using PPPP for full year, e.g., "May 23, 2025"
 }
