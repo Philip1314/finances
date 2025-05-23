@@ -3,200 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Finances Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Spends</title>
+    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        /* Custom scrollbar for dark mode */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #333; /* Darker track */
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #555; /* Darker thumb */
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #777; /* Lighter on hover */
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            /* Base dark mode styles by default */
-            background-color: #1a202c; /* Tailwind gray-900 */
-            color: #e2e8f0; /* Tailwind gray-200 */
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            min-height: 100vh; /* Ensure body takes full height for scroll */
-            position: relative; /* Needed for fixed children positioning */
-        }
-        /* Light mode styles */
-        body.light-mode {
-            background-color: #f7fafc; /* Tailwind gray-100 */
-            color: #2d3748; /* Tailwind gray-800 */
-        }
-        body.light-mode .dark-card {
-            background-color: #ffffff; /* White background */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            color: #2d3748;
-        }
-        body.light-mode .dark-filter-bg {
-            background-color: #ffffff;
-            color: #2d3748;
-        }
-        body.light-mode .dark-input {
-            background-color: #edf2f7; /* Tailwind gray-200 */
-            border-color: #cbd5e0; /* Tailwind gray-300 */
-            color: #2d3748;
-        }
-        body.light-mode .dark-input:focus {
-            border-color: #63b3ed;
-            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
-        }
-        body.light-mode .dark-select {
-            background-color: #edf2f7;
-            border-color: #cbd5e0;
-            color: #2d3748;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3e%3cpath d='M7 7l3-3 3 3m0 6l-3 3-3-3' stroke='%232d3748' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3e%3csvg%3e"); /* Darker arrow for light mode */
-        }
-        body.light-mode .text-gray-400 {
-            color: #4a5568; /* Tailwind gray-700 */
-        }
-        body.light-mode .text-gray-500 {
-            color: #718096; /* Tailwind gray-600 */
-        }
-        body.light-mode .bg-gray-700 {
-            background-color: #e2e8f0; /* Tailwind gray-200 */
-            color: #2d3748;
-        }
-        body.light-mode .hover\:bg-gray-600:hover {
-            background-color: #cbd5e0; /* Tailwind gray-300 */
-        }
-        body.light-mode .transaction-card {
-            background-color: #ffffff;
-            color: #2d3748;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-        }
-        body.light-mode .transaction-card-label {
-            color: #718096; /* Tailwind gray-600 */
-        }
-
-
-        /* Fixed button styling */
-        .fixed-button {
-            position: fixed;
-            z-index: 50;
-            transition: transform 0.3s ease-in-out;
-        }
-        .add-entry-button {
-            bottom: 1.5rem; /* 24px */
-            right: 1.5rem; /* 24px */
-        }
-        .theme-toggle-button {
-            bottom: 6rem; /* Adjust based on add entry button height + spacing */
-            right: 1.5rem; /* Align with add button */
-        }
-        /* Mobile adjustments for fixed buttons */
-        @media (max-width: 640px) { /* Tailwind's sm breakpoint */
-            .fixed-button {
-                bottom: 1rem; /* Smaller spacing on small screens */
-            }
-            .add-entry-button {
-                right: 1rem;
-            }
-            .theme-toggle-button {
-                bottom: 5rem; /* Adjust for smaller spacing */
-                right: 1rem;
-            }
-        }
-    </style>
 </head>
-<body class="p-4 sm:p-6 md:p-8">
-
-    <div class="max-w-6xl mx-auto">
-        <h1 class="text-3xl sm:text-4xl font-bold mb-6 text-center text-indigo-400">My Finances Dashboard</h1>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="dark-card p-6 rounded-lg text-center">
-                <p class="text-gray-400 text-sm font-semibold mb-2">Total Entries</p>
-                <p id="totalEntries" class="text-3xl font-bold text-white">0</p>
+<body>
+    <div class="mobile-container">
+        <header>
+            <div class="header-left">
+                <span>&lt;</span>
+                <h1>Spends</h1>
             </div>
-            <div class="dark-card p-6 rounded-lg text-center">
-                <p class="text-gray-400 text-sm font-semibold mb-2">Total Income</p>
-                <p id="totalIncome" class="text-3xl font-bold text-green-400">₱0.00</p>
+            <div class="header-right">
+                <span>📅</span>
+                <span class="filter-icon">☰</span>
             </div>
-            <div class="dark-card p-6 rounded-lg text-center">
-                <p class="text-gray-400 text-sm font-semibold mb-2">Total Expenses</p>
-                <p id="totalExpenses" class="text-3xl font-bold text-red-400">₱0.00</p>
-            </div>
-        </div>
+        </header>
 
-        <div class="dark-filter-bg p-6 rounded-lg mb-8">
-            <h2 class="text-xl font-semibold mb-4 text-white">Filter Entries</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div>
-                    <label for="startDate" class="block text-sm font-medium text-gray-400 mb-1">Start Date</label>
-                    <input type="date" id="startDate" class="dark-input w-full p-2 border border-gray-700 rounded-md focus:ring focus:ring-indigo-500">
-                </div>
-                <div>
-                    <label for="endDate" class="block text-sm font-medium text-gray-400 mb-1">End Date</label>
-                    <input type="date" id="endDate" class="dark-input w-full p-2 border border-gray-700 rounded-md focus:ring focus:ring-indigo-500">
-                </div>
-                <div>
-                    <label for="categoryFilter" class="block text-sm font-medium text-gray-400 mb-1">Category</label>
-                    <input type="text" id="categoryFilter" placeholder="e.g., Food, Transport" class="dark-input w-full p-2 border border-gray-700 rounded-md focus:ring focus:ring-indigo-500">
-                </div>
-                <div>
-                    <label for="typeFilter" class="block text-sm font-medium text-gray-400 mb-1">Type</label>
-                    <select id="typeFilter" class="dark-select w-full p-2 border border-gray-700 rounded-md focus:ring focus:ring-indigo-500">
-                        <option value="">All</option>
-                        <option value="Income">Income</option>
-                        <option value="Expense">Expense</option>
-                    </select>
-                </div>
-            </div>
+        <nav class="month-tabs">
+            <button class="tab-button">Jan</button>
+            <button class="tab-button active">Feb</button>
+            <button class="tab-button">Mar</button>
+            <button class="tab-button">Apr</button>
+            <button class="tab-button">May</button>
+            <button class="tab-button">Jun</button>
+        </nav>
 
-            <div class="flex flex-wrap gap-2 mb-4">
-                <button id="last7Days" class="px-4 py-2 rounded-md text-sm font-medium bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-200">Last 7 Days</button>
-                <button id="last30Days" class="px-4 py-2 rounded-md text-sm font-medium bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-200">Last 30 Days</button>
-                <button id="last90Days" class="px-4 py-2 rounded-md text-sm font-medium bg-gray-700 hover:bg-gray-600 text-white transition-colors duration-200">Last 90 Days</button>
-                <button id="allTime" class="px-4 py-2 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white transition-colors duration-200 active">All Time</button>
+        <main>
+            <div class="transactions-header">
+                <h2>Transactions</h2>
+                <button class="filter-button-main">Filter</button>
             </div>
-
-            <div class="flex justify-center gap-4 mt-4">
-                <button id="applyFiltersBtn" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-300">Apply Filters</button>
-                <button id="resetFiltersBtn" class="px-6 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-300">Reset Filters</button>
+            <div id="transactions-list">
+                <div class="loading-placeholder">Loading transactions...</div>
             </div>
-        </div>
+        </main>
 
-        <div class="dark-card p-6 rounded-lg mb-8">
-            <h2 class="text-xl font-semibold mb-4 text-white">Expense Distribution by Category</h2>
-            <div class="relative h-64 md:h-96"> <canvas id="expenseChart"></canvas>
-            </div>
-            <p id="noChartDataMessage" class="text-center text-gray-500 mt-4 hidden">No expense data to display chart for the selected filters.</p>
-        </div>
-
-        <div class="dark-card p-6 rounded-lg mb-20"> <h2 class="text-xl font-semibold mb-4 text-white">Recent Transactions</h2>
-            <div id="transactionsList" class="space-y-4">
-                <p class="text-center text-gray-500">Loading transactions...</p>
-            </div>
-            <p id="noTransactionsMessage" class="text-center text-gray-500 hidden mt-4">No transactions found for the selected filters.</p>
-        </div>
-
-        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header" target="_blank"
-           class="fixed-button add-entry-button w-16 h-16 flex items-center justify-center bg-green-600 text-white text-3xl rounded-full shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-300">
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header" target="_blank" class="fab">
             +
         </a>
-
-        <button id="themeToggleButton"
-                class="fixed-button theme-toggle-button p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-300">
-            ☀️ / 🌙
-        </button>
-
     </div>
 
     <script src="script.js"></script>
