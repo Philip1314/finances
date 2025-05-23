@@ -61,7 +61,7 @@
             background-color: #edf2f7;
             border-color: #cbd5e0;
             color: #2d3748;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3e%3cpath d='M7 7l3-3 3 3m0 6l-3 3-3-3' stroke='%232d3748' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e"); /* Darker arrow for light mode */
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3e%3cpath d='M7 7l3-3 3 3m0 6l-3 3-3-3' stroke='%232d3748' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3e%3csvg%3e"); /* Darker arrow for light mode */
         }
         body.light-mode .text-gray-400 {
             color: #4a5568; /* Tailwind gray-700 */
@@ -73,26 +73,32 @@
             background-color: #e2e8f0; /* Tailwind gray-200 */
             color: #2d3748;
         }
-        body.light-mode .hover:bg-gray-600:hover {
+        body.light-mode .hover\:bg-gray-600:hover {
             background-color: #cbd5e0; /* Tailwind gray-300 */
         }
-        /* Specific override for dark table row if it was still there, but table is removed */
-        .dark-table-row:nth-child(even), .dark-table-row:nth-child(odd) {
-            background-color: transparent; /* No specific rows now */
+        body.light-mode .transaction-card {
+            background-color: #ffffff;
+            color: #2d3748;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
         }
+        body.light-mode .transaction-card-label {
+            color: #718096; /* Tailwind gray-600 */
+        }
+
 
         /* Fixed button styling */
         .fixed-button {
             position: fixed;
-            bottom: 1.5rem; /* 24px */
             z-index: 50;
             transition: transform 0.3s ease-in-out;
         }
         .add-entry-button {
+            bottom: 1.5rem; /* 24px */
             right: 1.5rem; /* 24px */
         }
         .theme-toggle-button {
-            right: 8.5rem; /* Adjust based on add entry button width */
+            bottom: 6rem; /* Adjust based on add entry button height + spacing */
+            right: 1.5rem; /* Align with add button */
         }
         /* Mobile adjustments for fixed buttons */
         @media (max-width: 640px) { /* Tailwind's sm breakpoint */
@@ -103,7 +109,8 @@
                 right: 1rem;
             }
             .theme-toggle-button {
-                right: 6rem; /* Adjust for smaller button size/spacing */
+                bottom: 5rem; /* Adjust for smaller spacing */
+                right: 1rem;
             }
         }
     </style>
@@ -168,13 +175,21 @@
 
         <div class="dark-card p-6 rounded-lg mb-8">
             <h2 class="text-xl font-semibold mb-4 text-white">Expense Distribution by Category</h2>
-            <canvas id="expenseChart"></canvas>
-            <p id="noChartDataMessage" class="text-center text-gray-500 mt-4 hidden">No expense data to display chart.</p>
+            <div class="relative h-64 md:h-96"> <canvas id="expenseChart"></canvas>
+            </div>
+            <p id="noChartDataMessage" class="text-center text-gray-500 mt-4 hidden">No expense data to display chart for the selected filters.</p>
+        </div>
+
+        <div class="dark-card p-6 rounded-lg mb-20"> <h2 class="text-xl font-semibold mb-4 text-white">Recent Transactions</h2>
+            <div id="transactionsList" class="space-y-4">
+                <p class="text-center text-gray-500">Loading transactions...</p>
+            </div>
+            <p id="noTransactionsMessage" class="text-center text-gray-500 hidden mt-4">No transactions found for the selected filters.</p>
         </div>
 
         <a href="https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header" target="_blank"
-           class="fixed-button add-entry-button px-6 py-3 bg-green-600 text-white font-semibold rounded-full shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-300">
-            + Add New Entry
+           class="fixed-button add-entry-button w-16 h-16 flex items-center justify-center bg-green-600 text-white text-3xl rounded-full shadow-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-300">
+            +
         </a>
 
         <button id="themeToggleButton"
