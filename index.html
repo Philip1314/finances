@@ -5,21 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finance Tracker Dashboard</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/dist/date-fns.min.js"></script>
 </head>
-<body class="light-mode"> <header>
+<body class="light-mode">
+    <header>
         <h1>My Finance Dashboard</h1>
-        <div class="header-controls">
-            <a href="https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=sharing&ouid=107259885695768944070" target="_blank" class="add-input-btn">
-                + Add New Transaction
-            </a>
-            <button id="themeToggle" class="theme-toggle-btn">Toggle Dark Mode</button>
-        </div>
     </header>
 
     <main>
-        <section class="filters-section">
+        <section class="filters-section card">
             <h2>Filters</h2>
             <div class="filter-group">
                 <label for="startDate">From Date:</label>
@@ -43,18 +40,20 @@
                     <option value="">All</option>
                     </select>
             </div>
-            <button id="applyFilters">Apply Filters</button>
-            <button id="clearFilters">Clear Filters</button>
+            <div class="filter-actions">
+                <button id="applyFilters" class="btn primary-btn">Apply Filters</button>
+                <button id="clearFilters" class="btn secondary-btn">Clear Filters</button>
+            </div>
         </section>
 
-        <section class="summary-section">
+        <section class="summary-section card">
             <h2>Summary</h2>
-            <p>Total Expenses: <span id="totalExpenses">$0.00</span></p>
-            <p>Total Gains: <span id="totalGains">$0.00</span></p>
-            <p>Net Balance: <span id="netBalance">$0.00</span></p>
+            <p>Total Expenses: <span id="totalExpenses">₱0.00</span></p>
+            <p>Total Gains: <span id="totalGains">₱0.00</span></p>
+            <p>Net Balance: <span id="netBalance">₱0.00</span></p>
         </section>
 
-        <section class="charts-section">
+        <section class="charts-section card">
             <h2>Visualizations</h2>
             <div class="chart-container">
                 <h3>Expenses by Category</h3>
@@ -70,7 +69,7 @@
             </div>
         </section>
 
-        <section class="transactions-list-section">
+        <section class="transactions-list-section card">
             <h2>Recent Transactions</h2>
             <ul id="transactionsList">
                 </ul>
@@ -81,6 +80,15 @@
     <footer>
         <p>&copy; 2025 Finance Tracker. All rights reserved.</p>
     </footer>
+
+    <div class="fab-container">
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=sharing&ouid=107259885695768944070" target="_blank" class="fab primary-fab" title="Add New Transaction">
+            <i class="material-icons">add</i>
+        </a>
+        <button id="themeToggle" class="fab secondary-fab" title="Toggle Theme">
+            <i class="material-icons" id="themeIcon">dark_mode</i>
+        </button>
+    </div>
 
     <script src="script.js"></script>
 </body>
