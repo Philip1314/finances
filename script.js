@@ -14,6 +14,8 @@ const totalIncomeElem = document.getElementById('totalIncome');
 const totalExpensesElem = document.getElementById('totalExpenses');
 const expenseChartCanvas = document.getElementById('expenseChart');
 const noChartDataMessage = document.getElementById('noChartDataMessage');
+const transactionsListContainer = document.getElementById('transactionsList');
+const noTransactionsMessage = document.getElementById('noTransactionsMessage');
 
 
 // Filter elements
@@ -74,14 +76,25 @@ async function fetchData() {
         }
         const csvText = await response.text();
         allData = parseCSV(csvText);
+        // Sort data by Date in descending order (most recent first)
+        allData.sort((a, b) => {
+            const dateA = new Date(a.Date + 'T00:00:00');
+            const dateB = new Date(b.Date + 'T00:00:00');
+            return dateB - dateA;
+        });
+
         console.log("Fetched Data:", allData); // For debugging
         applyFilters(); // Apply initial filters (e.g., "All Time")
     } catch (error) {
         console.error('Error fetching or parsing data:', error);
-        // Display error message where chart would be
+        // Display error message
         expenseChartCanvas.style.display = 'none';
         noChartDataMessage.textContent = 'Error loading data. Please check your sheet URL and browser console.';
         noChartDataMessage.classList.remove('hidden');
+
+        transactionsListContainer.innerHTML = ''; // Clear list
+        noTransactionsMessage.textContent = 'Error loading transactions. Please check your sheet URL.';
+        noTransactionsMessage.classList.remove('hidden');
 
         totalEntriesElem.textContent = 'N/A';
         totalIncomeElem.textContent = '₱N/A';
@@ -135,7 +148,7 @@ function applyFilters() {
         return matchesDate && matchesCategory && matchesType;
     });
 
-    // Recalculate summary for all filtered data (not just current page)
+    // Recalculate summary for all filtered data
     let overallFilteredIncome = 0;
     let overallFilteredExpenses = 0;
     filteredData.forEach(entry => {
@@ -148,7 +161,8 @@ function applyFilters() {
     });
     updateSummary(filteredData.length, overallFilteredIncome, overallFilteredExpenses);
 
-    renderChart(); // Render chart after applying filters
+    renderChart(); // Render chart based on filtered data
+    renderTransactionsList(); // Render transaction list based on filtered data
 }
 
 /**
@@ -219,6 +233,7 @@ function renderChart() {
     if (totalExpenseAmount === 0 || chartLabels.length === 0) {
         if (expenseChart) {
             expenseChart.destroy(); // Destroy old chart if no data
+            expenseChart = null; // Reset chart instance
         }
         expenseChartCanvas.style.display = 'none';
         noChartDataMessage.classList.remove('hidden');
@@ -242,6 +257,8 @@ function renderChart() {
         expenseChart.data.datasets[0].data = chartData;
         expenseChart.data.datasets[0].backgroundColor = backgroundColors;
         expenseChart.data.datasets[0].borderColor = borderColors;
+        // Update legend label color if theme changes
+        expenseChart.options.plugins.legend.labels.color = bodyElement.classList.contains('light-mode') ? '#2d3748' : '#e2e8f0';
         expenseChart.update();
     } else {
         expenseChart = new Chart(ctx, {
@@ -287,12 +304,43 @@ function renderChart() {
             }
         });
     }
+}
 
-    // Update chart legend color on theme change
-    if (expenseChart) {
-        expenseChart.options.plugins.legend.labels.color = bodyElement.classList.contains('light-mode') ? '#2d3748' : '#e2e8f0';
-        expenseChart.update();
+/**
+ * Renders the list of transactions.
+ */
+function renderTransactionsList() {
+    transactionsListContainer.innerHTML = ''; // Clear existing transactions
+
+    if (filteredData.length === 0) {
+        noTransactionsMessage.classList.remove('hidden');
+        return;
+    } else {
+        noTransactionsMessage.classList.add('hidden');
     }
+
+    filteredData.forEach(entry => {
+        const amount = parseFloat(entry.Amount) || 0;
+        const isExpense = entry.Type && entry.Type.toLowerCase() === 'expense';
+        const amountColorClass = isExpense ? 'text-red-400' : 'text-green-400';
+        const sign = isExpense ? '-' : '+';
+
+        const transactionCard = document.createElement('div');
+        transactionCard.classList.add('transaction-card', 'dark-card', 'p-4', 'rounded-lg', 'flex', 'flex-col', 'sm:flex-row', 'justify-between', 'items-start', 'sm:items-center');
+
+        transactionCard.innerHTML = `
+            <div class="mb-2 sm:mb-0">
+                <p class="text-lg font-semibold">${entry.Category || 'N/A'}</p>
+                <p class="text-sm text-gray-400 transaction-card-label">${entry.Date || 'N/A'}</p>
+                <p class="text-sm text-gray-400 transaction-card-label">${entry.Remarks || 'No remarks'}</p>
+            </div>
+            <div class="text-right sm:text-right">
+                <p class="text-lg font-bold ${amountColorClass}">${sign}${formatCurrency(amount)}</p>
+                <p class="text-sm text-gray-400 transaction-card-label">${entry.Type || 'N/A'}</p>
+            </div>
+        `;
+        transactionsListContainer.appendChild(transactionCard);
+    });
 }
 
 
@@ -308,7 +356,7 @@ function toggleTheme() {
         localStorage.setItem('theme', 'light');
     }
     // Re-render chart to update legend color if theme changes
-    if (expenseChart) {
+    if (expenseChart) { // Check if chart exists
         expenseChart.options.plugins.legend.labels.color = bodyElement.classList.contains('light-mode') ? '#2d3748' : '#e2e8f0';
         expenseChart.update();
     }
