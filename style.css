@@ -1,0 +1,325 @@
+/* --- CSS Variables for Light Mode --- */
+:root {
+    --bg-color: #f4f7f6;
+    --primary-bg: #ffffff;
+    --header-bg: #4CAF50;
+    --header-text: white;
+    --text-color: #333;
+    --accent-color: #2E7D32;
+    --border-color: #E0E0E0;
+    --shadow-color: rgba(0,0,0,0.1);
+    --input-border: #ccc;
+    --button-primary-bg: #4CAF50;
+    --button-primary-hover: #45a049;
+    --button-danger-bg: #F44336;
+    --button-danger-hover: #D32F2F;
+    --add-btn-bg: #FFC107;
+    --add-btn-hover: #FFECB3;
+    --expense-item-bg: #FFE0B2; /* Light Orange */
+    --gain-item-bg: #DCEDC8;    /* Light Green */
+    --net-balance-positive: #1B5E20; /* Dark Green */
+    --net-balance-negative: #D32F2F; /* Red */
+    --item-text-color: #444;
+}
+
+/* --- CSS Variables for Dark Mode --- */
+body.dark-mode {
+    --bg-color: #222222;
+    --primary-bg: #333333;
+    --header-bg: #1A1A1A;
+    --header-text: #E0E0E0;
+    --text-color: #E0E0E0;
+    --accent-color: #8BC34A; /* Lighter Green */
+    --border-color: #555555;
+    --shadow-color: rgba(0,0,0,0.4);
+    --input-border: #666;
+    --button-primary-bg: #689F38; /* Green */
+    --button-primary-hover: #558B2F;
+    --button-danger-bg: #B71C1C; /* Darker Red */
+    --button-danger-hover: #8B0000;
+    --add-btn-bg: #FFA000; /* Darker Amber */
+    --add-btn-hover: #FFB300;
+    --expense-item-bg: #4A148C; /* Purple for dark mode expenses */
+    --gain-item-bg: #2E7D32;    /* Darker Green for dark mode gains */
+    --net-balance-positive: #8BC34A; /* Lighter Green */
+    --net-balance-negative: #FF5252; /* Lighter Red */
+    --item-text-color: #BBBBBB;
+}
+
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    transition: background-color 0.3s, color 0.3s; /* Smooth transition */
+}
+
+header {
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 5px var(--shadow-color);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: flex; /* Use flexbox for header controls */
+    flex-direction: column;
+    align-items: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.header-controls {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+    justify-content: center;
+    gap: 10px; /* Space between buttons */
+    margin-top: 0.8rem;
+}
+
+.add-input-btn,
+.theme-toggle-btn {
+    display: inline-block;
+    background-color: var(--add-btn-bg);
+    color: var(--text-color); /* Use text-color for button text */
+    padding: 0.6rem 1.2rem;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    border: none; /* Make theme toggle a button */
+    cursor: pointer;
+    font-family: inherit; /* Inherit font for button */
+    font-size: 1rem; /* Adjust font size */
+}
+
+.add-input-btn:hover {
+    background-color: var(--add-btn-hover);
+}
+
+.theme-toggle-btn {
+    background-color: var(--header-bg); /* Use header color for toggle btn */
+    color: var(--header-text); /* Use header text color */
+    border: 1px solid var(--header-text); /* Subtle border */
+}
+
+.theme-toggle-btn:hover {
+    background-color: var(--accent-color); /* Use accent color on hover */
+}
+
+
+main {
+    padding: 1rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+section {
+    background-color: var(--primary-bg);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 5px var(--shadow-color);
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+h2 {
+    color: var(--accent-color);
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.5rem;
+    margin-top: 0;
+    font-size: 1.5rem;
+    transition: color 0.3s, border-color 0.3s;
+}
+
+h3 {
+    color: var(--accent-color); /* Using accent color for h3 */
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    transition: color 0.3s;
+}
+
+/* Filters Section */
+.filters-section .filter-group {
+    margin-bottom: 1rem;
+}
+
+.filters-section label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-weight: bold;
+    color: var(--text-color); /* Use text-color */
+}
+
+.filters-section input[type="date"],
+.filters-section select {
+    width: calc(100% - 20px); /* Adjust for padding */
+    padding: 0.8rem 10px;
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    font-size: 1rem;
+    box-sizing: border-box; /* Include padding in width */
+    background-color: var(--primary-bg); /* Match section bg */
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.filters-section button {
+    background-color: var(--button-primary-bg);
+    color: var(--header-text); /* White text */
+    padding: 0.8rem 1.2rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-right: 0.5rem;
+    margin-top: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.filters-section button:hover {
+    background-color: var(--button-primary-hover);
+}
+
+#clearFilters {
+    background-color: var(--button-danger-bg);
+}
+
+#clearFilters:hover {
+    background-color: var(--button-danger-hover);
+}
+
+
+/* Summary Section */
+.summary-section p {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    color: var(--item-text-color);
+}
+
+#netBalance {
+    font-weight: bold;
+    color: var(--net-balance-positive); /* Default for positive */
+    font-size: 1.2rem;
+}
+
+/* Specific color for negative net balance */
+body:not(.dark-mode) #netBalance.negative {
+    color: var(--net-balance-negative);
+}
+body.dark-mode #netBalance.negative {
+    color: var(--net-balance-negative);
+}
+
+
+/* Charts Section */
+.charts-section .chart-container {
+    margin-bottom: 2rem;
+    position: relative; /* For responsive canvas */
+    height: 250px; /* Adjust height as needed */
+}
+
+/* Chart.js specific color adjustments for dark mode */
+body.dark-mode canvas {
+    background-color: var(--primary-bg); /* Chart background */
+    border-radius: 8px;
+    padding: 10px;
+}
+body.dark-mode .chartjs-render-monitor {
+    color: var(--text-color); /* Make axis labels visible */
+}
+
+
+/* Transactions List */
+#transactionsList {
+    list-style: none;
+    padding: 0;
+}
+
+#transactionsList li {
+    background-color: var(--primary-bg); /* Default item background */
+    border: 1px solid var(--border-color);
+    padding: 0.8rem;
+    margin-bottom: 0.5rem;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+#transactionsList li span {
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+#transactionsList li .amount {
+    font-weight: bold;
+    color: var(--accent-color); /* Use accent color for amount */
+    font-size: 1.1rem;
+}
+
+#transactionsList li.expense {
+    background-color: var(--expense-item-bg);
+}
+
+#transactionsList li.gain {
+    background-color: var(--gain-item-bg);
+}
+
+footer {
+    text-align: center;
+    padding: 1rem;
+    margin-top: 2rem;
+    background-color: var(--border-color); /* Use border color for footer */
+    color: var(--text-color);
+    font-size: 0.9rem;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    .header-controls {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .add-input-btn, .theme-toggle-btn {
+        width: calc(100% - 2.4rem); /* Full width minus padding */
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    main {
+        padding: 0.5rem;
+    }
+
+    section {
+        padding: 1rem;
+    }
+
+    .filters-section button {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+    }
+
+    #transactionsList li {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
