@@ -54,9 +54,10 @@ body {
 }
 #dashboard-page .header h1 {
     flex-grow: 1; /* Allow title to take available space */
-    text-align: center; /* Center the title */
-    margin-right: -36px; /* Offset profile icon width to truly center title */
-    padding-left: 36px; /* Offset back arrow width to truly center title */
+    text-align: left; /* Left-align the title */
+    /* Adjustments for centering are not needed when aligning left */
+    margin-right: 0;
+    padding-left: 0;
 }
 #dashboard-page .header .back-arrow {
     padding-right: 0; /* No extra padding for dashboard back arrow */
@@ -65,8 +66,7 @@ body {
 
 /* Specific to transactions.html header */
 #transactions-page .header {
-    /* Simply justify content to space out arrow and date circle */
-    justify-content: space-between;
+    justify-content: space-between; /* Simply justify content to space out arrow and date circle */
 }
 
 .back-arrow {
@@ -78,35 +78,31 @@ body {
 
 /* Updated profile-icon to also act as the date display */
 .profile-icon {
-    width: 56px; /* Make it slightly larger for the date */
+    width: 56px; /* Make it slightly larger for the date or initial 'P' */
     height: 56px;
     border-radius: 50%;
     background-color: var(--accent-orange);
     color: white;
     display: flex;
-    flex-direction: column; /* Stack month and day */
+    flex-direction: column; /* Stack month and day on transactions page, or center 'P' */
     justify-content: center;
     align-items: center;
     font-weight: bold;
-    font-size: 1rem; /* Adjust font size for date */
+    font-size: 1rem; /* Adjust font size for date or 'P' */
     line-height: 1.2; /* Spacing for stacked text */
     flex-shrink: 0;
     padding: 2px; /* Small padding inside circle */
 }
 
-.profile-icon span:first-child { /* Month */
+/* Styles specific to the date display within the profile-icon on transactions page */
+#transactions-page .profile-icon span:first-child { /* Month */
     font-size: 0.8rem;
     font-weight: normal;
 }
-.profile-icon span:last-child { /* Day */
+#transactions-page .profile-icon span:last-child { /* Day */
     font-size: 1.5rem;
     font-weight: bold;
 }
-
-/* Remove date-display specific styles as it's no longer a separate element */
-/* .date-display { ... } */
-/* .date-display span { ... } */
-
 
 /* Main Content Area */
 .main-content {
