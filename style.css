@@ -83,10 +83,11 @@ body {
     font-weight: 500;
     display: flex; /* Make it a flex container */
     flex-direction: column; /* Stack month and day */
-    justify-content: center;
-    align-items: center;
+    justify-content: center; /* Center vertically */
+    align-items: center; /* Center horizontally */
     line-height: 1.1; /* Adjust line height for stacked text */
     padding: 2px; /* Small padding inside the circle */
+    text-align: center; /* Ensure text itself is centered */
 }
 
 /* Style for the date to make it look like the old calendar icon (circled) */
