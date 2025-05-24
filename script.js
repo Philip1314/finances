@@ -379,8 +379,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const nameSpan = document.createElement('span');
                     nameSpan.classList.add('transaction-name');
-                    // Display Description first, fallback to 'What kind?' if no description
-                    nameSpan.textContent = entry.Description || entry['What kind?'] || 'N/A';
+                    // PRIORITIZE 'Description', then 'What kind?', then 'N/A'
+                    nameSpan.textContent = entry.Description && entry.Description.trim() !== '' ? entry.Description : entry['What kind?'] || 'N/A';
                     detailsDiv.appendChild(nameSpan);
 
                     const timeSpan = document.createElement('span');
@@ -421,7 +421,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Format as "MMM" (short month name) and "DD" (day of month) on separate lines
             const month = today.toLocaleDateString('en-US', { month: 'short' });
             const day = today.getDate();
-            dateDisplayElement.innerHTML = `<span>${month}</span><span>${day}</span>`; // Use span for each part
+            // Use innerHTML to allow for the <span> tags to stack the text
+            dateDisplayElement.innerHTML = `<span>${month}</span><span>${day}</span>`;
         }
     }
 
