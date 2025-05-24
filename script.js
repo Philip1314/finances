@@ -149,14 +149,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Calculate Remaining Balance
             const remainingBalance = totalGainsAmount - totalExpensesAmount;
-            // Define a base budget. If total gains are 0, this acts as a default initial budget.
-            const defaultOrBaseBudget = 5000;
-            const totalIncomeOrBudget = totalGainsAmount > 0 ? totalGainsAmount : defaultOrBaseBudget;
+            // The budget should be 0 unless there are actual gains.
+            // If totalGainsAmount is 0, the totalIncomeOrBudget will be 0.
+            const totalIncomeOrBudget = totalGainsAmount; // Sets budget to 0 if no gains
 
             document.getElementById('remainingBalanceAmount').textContent = `${formatCurrency(remainingBalance)} of ${formatCurrency(totalIncomeOrBudget)}`;
 
             // Calculate and display Remaining Balance Percentage
-            const remainingBalancePercentage = (remainingBalance / totalIncomeOrBudget) * 100;
+            let remainingBalancePercentage = 0;
+            if (totalIncomeOrBudget > 0) { // Only calculate if there's a budget to divide by
+                remainingBalancePercentage = (remainingBalance / totalIncomeOrBudget) * 100;
+            }
+            // Ensure percentage is between 0 and 100
             const displayPercentage = isNaN(remainingBalancePercentage) ? 0 : Math.max(0, Math.min(100, remainingBalancePercentage));
             document.getElementById('remainingBalancePct').textContent = `${Math.round(displayPercentage)}%`;
 
@@ -376,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const nameSpan = document.createElement('span');
                     nameSpan.classList.add('transaction-name');
                     // Display Description first, fallback to 'What kind?' if no description
-                    nameSpan.textContent = entry.Description || entry['What kind'] || 'N/A';
+                    nameSpan.textContent = entry.Description || entry['What kind?'] || 'N/A';
                     detailsDiv.appendChild(nameSpan);
 
                     const timeSpan = document.createElement('span');
@@ -414,9 +418,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const dateDisplayElement = document.getElementById('currentDateDisplay');
         if (dateDisplayElement) {
             const today = new Date();
-            // Format as "Month Day" (e.g., "May 24")
-            const options = { month: 'short', day: 'numeric' };
-            dateDisplayElement.textContent = today.toLocaleDateString('en-US', options);
+            // Format as "MMM" (short month name) and "DD" (day of month) on separate lines
+            const month = today.toLocaleDateString('en-US', { month: 'short' });
+            const day = today.getDate();
+            dateDisplayElement.innerHTML = `<span>${month}</span><span>${day}</span>`; // Use span for each part
         }
     }
 
