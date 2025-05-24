@@ -203,7 +203,7 @@ body {
 }
 
 .progress-circle {
-    position: relative;
+    position: relative; /* Essential for positioning progress-text */
     width: 80px;
     height: 80px;
 }
@@ -226,14 +226,17 @@ body {
     transition: stroke-dashoffset 0.35s, stroke 0.35s;
 }
 
+/* Adjusted progress-text to be inside the circle */
 .progress-text {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%); /* Center horizontally and vertically */
     font-size: 1.1rem;
     font-weight: bold;
     color: var(--text-dark);
+    /* Ensure it's above the SVG elements if needed, though pointer-events: none on SVG might help */
+    pointer-events: none; /* Allows clicks to pass through to elements below */
 }
 
 .limit-details {
