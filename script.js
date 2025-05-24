@@ -1,6 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Corrected CSV URL from previous interactions
-    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv';
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv'; // This URL is correct for reading the CSV data
+
+    // --- YOUR GOOGLE FORM LINK ---
+    const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform';
+
 
     function parseCSV(csv) {
         const lines = csv.split('\n').filter(line => line.trim() !== '');
@@ -95,6 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Dashboard Specific Logic (index.html) ---
     async function updateDashboard() {
+        if (!document.getElementById('dashboard-page')) return; // Only run on dashboard page
+
         try {
             const response = await fetch(CSV_URL);
             const csv = await response.text();
@@ -154,8 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (totalIncomeOrBudget > 0) {
                 remainingBalancePercentage = (remainingBalance / totalIncomeOrBudget) * 100;
             }
-            const displayPercentage = isNaN(remainingBalancePercentage) ? 0 : remainingBalancePercentage;
-            document.getElementById('remainingBalancePct').textContent = `${Math.round(displayPercentage)}%`;
+            const displayPercentage = isNaN(remainingBalancePercentage) ? 0 : Math.round(remainingBalancePercentage); // Round for display
+            document.getElementById('remainingBalancePct').textContent = `${displayPercentage}%`; // Display percentage inside circle
 
             // Update Progress Circle (Remaining Balance)
             let progressOffset = 0;
@@ -399,14 +405,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     timeSpan.classList.add('transaction-time');
                     timeSpan.textContent = entry.Time || ''; // Display time if available
                     detailsDiv.appendChild(timeSpan);
+
                     itemDiv.appendChild(detailsDiv);
 
                     const amountSpan = document.createElement('span');
                     amountSpan.classList.add('transaction-amount');
-                    const amountValue = parseFloat(entry.Amount);
-                    amountSpan.textContent = formatCurrency(amountValue);
-                    // Add expense/gain class for color styling
-                    amountSpan.classList.add(entry.Type && entry.Type.toLowerCase() === 'expenses' ? 'expense' : 'gain');
+                    amountSpan.textContent = formatCurrency(entry.Amount);
+                    if (entry.Type && entry.Type.toLowerCase() === 'expenses') {
+                        amountSpan.classList.add('expense');
+                    } else if (entry.Type && entry.Type.toLowerCase() === 'gains') {
+                        amountSpan.classList.add('gain');
+                    }
                     itemDiv.appendChild(amountSpan);
 
                     groupDiv.appendChild(itemDiv);
@@ -414,122 +423,87 @@ document.addEventListener('DOMContentLoaded', () => {
                 transactionsListDiv.appendChild(groupDiv);
             });
 
-            // Display message if no transactions are found
-            if (Object.keys(groupedTransactions).length === 0) {
-                 transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No transactions found for this month with the applied filter.</p>';
+            if (data.length === 0) {
+                transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No transactions found for this month or filter.</p>';
             }
 
         } catch (error) {
             console.error('Error fetching or processing CSV for transactions:', error);
-            transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--accent-red);">Failed to load transactions. Please try again later.</p>';
+            transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--accent-red); padding: 2rem;">Error loading transactions. Please check the data source.</p>';
         }
     }
 
-    // UPDATED: updateCurrentDateDisplay to correctly format for transactions page
-    function updateCurrentDateDisplay() {
-        // Target the profile-icon element by its ID on the transactions page
-        const profileDateDisplayElement = document.getElementById('profileDateDisplay');
-        if (profileDateDisplayElement) {
-            const today = new Date();
-            const month = today.toLocaleDateString('en-US', { month: 'short' }); // e.g., "May"
-            const day = today.getDate(); // e.g., "24"
-            // Set the innerHTML with spans for styling the stacked month and day
-            profileDateDisplayElement.innerHTML = `<span>${month}</span><span>${day}</span>`;
-        }
+    // --- Common Logic & Event Listeners ---
+
+    // Floating Action Button (FAB) click handler - RESTORED ORIGINAL FUNCTIONALITY
+    const fabButton = document.querySelector('.fab-button');
+    if (fabButton) {
+        fabButton.addEventListener('click', () => {
+            window.location.href = GOOGLE_FORM_URL; // Navigate to the Google Form
+        });
     }
 
-    // --- Main Page Initialization Logic ---
-    const dashboardPage = document.getElementById('dashboard-page');
-    const transactionsPage = document.getElementById('transactions-page');
-
-    if (dashboardPage) {
-        updateDashboard(); // Load dashboard data if on dashboard page
-    } else if (transactionsPage) {
-        updateCurrentDateDisplay(); // Set the date in the circle on transactions page
-
-        const monthButtons = document.querySelectorAll('.month-button');
-        const currentMonth = new Date().getMonth() + 1; // Get current month (1-indexed)
-
-        let currentActiveMonth = currentMonth; // Default active month to current month
+    // Determine current page and call relevant functions
+    if (document.getElementById('dashboard-page')) {
+        updateDashboard();
+    } else if (document.getElementById('transactions-page')) {
+        const today = new Date();
+        const currentMonth = today.getMonth() + 1; // getMonth() is 0-indexed
 
         // Set initial active month button
-        let initialMonthSet = false;
+        const monthButtons = document.querySelectorAll('.month-button');
         monthButtons.forEach(button => {
-            const monthNumber = parseInt(button.dataset.month);
-            if (monthNumber === currentMonth) {
+            if (parseInt(button.dataset.month) === currentMonth) {
                 button.classList.add('active');
-                initialMonthSet = true;
-            } else {
-                button.classList.remove('active');
             }
         });
 
-        // Fallback: if no button matches current month (e.g., if months are limited), select closest or first
-        if (!initialMonthSet && monthButtons.length > 0) {
-            let closestMonthButton = monthButtons[0];
-            let minDiff = Math.abs(currentMonth - parseInt(monthButtons[0].dataset.month));
-
-            for (let i = 1; i < monthButtons.length; i++) {
-                const diff = Math.abs(currentMonth - parseInt(monthButtons[i].dataset.month));
-                if (diff < minDiff) {
-                    minDiff = diff;
-                    closestMonthButton = monthButtons[i];
-                }
-            }
-            closestMonthButton.classList.add('active');
-            currentActiveMonth = parseInt(closestMonthButton.dataset.month);
-        } else if (!initialMonthSet) {
-             currentActiveMonth = 1; // Default to January if no current month button found at all
+        // Set date in profile icon on transactions page
+        const profileDateDisplay = document.getElementById('profileDateDisplay');
+        if (profileDateDisplay) {
+            const monthName = today.toLocaleDateString('en-US', { month: 'short' });
+            const dayOfMonth = today.getDate();
+            profileDateDisplay.innerHTML = `<span>${monthName}</span><span>${dayOfMonth}</span>`;
         }
 
+        // Render transactions for the current month on load
+        renderTransactions(currentMonth);
 
-        // Initial render of transactions for the determined active month
-        renderTransactions(currentActiveMonth);
-
-        // Add event listeners to month buttons
+        // Add event listeners for month buttons
         monthButtons.forEach(button => {
             button.addEventListener('click', function() {
-                // Remove active class from all buttons
-                monthButtons.forEach(btn => btn.classList.remove('active'));
-                // Add active class to the clicked button
-                this.classList.add('active');
-                currentActiveMonth = parseInt(this.dataset.month); // Update active month
-                const filterKeyword = document.getElementById('filterKeyword')?.value || ''; // Get current filter keyword
-                renderTransactions(currentActiveMonth, filterKeyword); // Re-render with new month
+                monthButtons.forEach(btn => btn.classList.remove('active')); // Remove active from all
+                this.classList.add('active'); // Add active to clicked
+                const month = parseInt(this.dataset.month);
+                const currentFilterKeyword = document.getElementById('filterKeyword').value;
+                renderTransactions(month, currentFilterKeyword);
             });
         });
 
-        // Filter button logic
+        // Filter button functionality
         const filterButton = document.getElementById('filterButton');
-        const filterOptionsDiv = document.getElementById('filterOptions');
-        const filterKeywordInput = document.getElementById('filterKeyword');
+        const filterOptions = document.getElementById('filterOptions');
         const applyFilterButton = document.getElementById('applyFilter');
+        const filterKeywordInput = document.getElementById('filterKeyword');
 
-        if (filterButton && filterOptionsDiv) {
+        if (filterButton && filterOptions && applyFilterButton && filterKeywordInput) {
             filterButton.addEventListener('click', () => {
-                // Toggle visibility of filter options
-                filterOptionsDiv.style.display = filterOptionsDiv.style.display === 'none' ? 'block' : 'none';
-                if (filterOptionsDiv.style.display === 'block') {
-                    filterKeywordInput.focus(); // Focus on input when opened
-                } else {
-                    // Clear filter and re-render if filter options are closed
-                    filterKeywordInput.value = '';
-                    renderTransactions(currentActiveMonth, '');
-                }
+                filterOptions.style.display = filterOptions.style.display === 'none' ? 'block' : 'none';
             });
-        }
 
-        if (applyFilterButton && filterKeywordInput) {
             applyFilterButton.addEventListener('click', () => {
+                const activeMonthButton = document.querySelector('.month-button.active');
+                const selectedMonth = activeMonthButton ? parseInt(activeMonthButton.dataset.month) : new Date().getMonth() + 1;
                 const keyword = filterKeywordInput.value;
-                renderTransactions(currentActiveMonth, keyword); // Apply filter and re-render
+                renderTransactions(selectedMonth, keyword);
+                filterOptions.style.display = 'none'; // Hide filter options after applying
             });
 
-            // Allow pressing Enter key to apply filter in the keyword input
+            // Allow pressing Enter in the keyword input to apply filter
             filterKeywordInput.addEventListener('keypress', (event) => {
                 if (event.key === 'Enter') {
-                    event.preventDefault(); // Prevent default form submission
-                    applyFilterButton.click(); // Trigger apply filter button click
+                    event.preventDefault(); // Prevent default form submission if input is part of a form
+                    applyFilterButton.click(); // Programmatically click the apply filter button
                 }
             });
         }
