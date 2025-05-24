@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'salary':
                     icon = '💸';
                     break;
-                case 'allowance': // Allowance received (gain)
+                case 'allowance':
                     icon = '🎁';
                     break;
                 default:
@@ -67,19 +67,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     icon = '🛍️';
                     break;
                 case 'transportation':
-                    category = 'Transportation'; // For transaction list
+                    category = 'Transportation';
                     icon = '🚌';
                     break;
                 case 'utility bills':
-                    category = 'Utility Bills'; // For transaction list
+                    category = 'Utility Bills';
                     icon = '💡';
                     break;
-                case 'allowance': // Allowance spent (expense)
-                    category = 'Misc'; // For dashboard chart, allowance spent goes to Misc
+                case 'allowance':
+                    category = 'Misc'; // Allowance spent often falls into a general category for analysis
                     icon = '🚶';
                     break;
                 default:
-                    category = 'Misc'; // Catch-all for other expenses not explicitly categorized for the chart
+                    category = 'Misc';
                     icon = '✨';
                     break;
             }
@@ -116,7 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (entryType === 'expenses') {
                     totalExpensesAmount += amount;
-                    // Categorize for the donut chart (only specific expense types are tracked here)
                     if (entryWhatKind === 'food' || entryWhatKind === 'groceries') {
                         expenseCategoriesForChart.Food += amount;
                     } else if (entryWhatKind === 'medicines') {
@@ -124,8 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (entryWhatKind === 'online shopping') {
                         expenseCategoriesForChart.Shopping += amount;
                     } else {
-                        // All other expenses (including 'Allowance' when it's an expense, Transportation, Utility Bills)
-                        // are grouped under 'Misc' for the dashboard chart.
                         expenseCategoriesForChart.Misc += amount;
                     }
                 } else if (entryType === 'gains') {
@@ -191,12 +188,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (window.expenseChartInstance) {
                     window.expenseChartInstance.destroy();
                 }
-                // CHART.JS COLORS: MUST MATCH CSS LEGEND DOT COLORS
+                // CHART.JS COLORS TO MATCH CSS LEGEND DOT COLORS
                 const chartColors = [
-                    'var(--accent-green)',  // Food
-                    'var(--accent-red)',    // Medicines
-                    'var(--accent-orange)', // Shopping
-                    'var(--accent-blue)'    // Misc
+                    getComputedStyle(document.documentElement).getPropertyValue('--accent-green').trim(),    // Food
+                    getComputedStyle(document.documentElement).getPropertyValue('--accent-red').trim(),      // Medicines
+                    getComputedStyle(document.documentElement).getPropertyValue('--accent-orange').trim(),   // Shopping
+                    getComputedStyle(document.documentElement).getPropertyValue('--accent-blue').trim()     // Misc
                 ];
                 window.expenseChartInstance = new Chart(ctx.getContext('2d'), {
                     type: 'doughnut',
@@ -260,14 +257,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const entryDate = new Date(entry.Date);
-                entryDate.setHours(0, 0, 0, 0); // Normalize entry date for accurate comparison
+                entryDate.setHours(0, 0, 0, 0);
 
-                // Month filter
                 if (entryDate.getMonth() + 1 !== selectedMonth) {
                     return false;
                 }
 
-                // Keyword filter
                 if (filterKeyword) {
                     const lowerCaseKeyword = filterKeyword.toLowerCase();
                     const description = entry.Description ? entry.Description.toLowerCase() : '';
@@ -399,14 +394,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // UPDATED: updateCurrentDateDisplay to use textContent and handle specific format
+    // UPDATED: updateCurrentDateDisplay to correctly format for transactions page
     function updateCurrentDateDisplay() {
-        const dateDisplayElement = document.getElementById('currentDateDisplay');
-        if (dateDisplayElement) {
+        // Target the profile-icon element by its new ID
+        const profileDateDisplayElement = document.getElementById('profileDateDisplay');
+        if (profileDateDisplayElement) {
             const today = new Date();
-            const month = today.toLocaleDateString('en-US', { month: 'short' }); // e.g., "May"
-            const day = today.getDate(); // e.g., 24
-            dateDisplayElement.innerHTML = `<span>${month}</span><span>${day}</span>`; // Use innerHTML to allow stacking
+            const month = today.toLocaleDateString('en-US', { month: 'short' });
+            const day = today.getDate();
+            // Set the innerHTML with spans for styling the stacked month and day
+            profileDateDisplayElement.innerHTML = `<span>${month}</span><span>${day}</span>`;
         }
     }
 
@@ -449,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
             closestMonthButton.classList.add('active');
             currentActiveMonth = parseInt(closestMonthButton.dataset.month);
         } else if (!initialMonthSet) {
-             currentActiveMonth = 1;
+             currentActiveMonth = 1; // Default to January if no current month button found
         }
 
         renderTransactions(currentActiveMonth);
@@ -476,7 +473,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (filterOptionsDiv.style.display === 'block') {
                     filterKeywordInput.focus();
                 } else {
-                    // When hiding the filter, clear the keyword and re-render to show all for the month
                     filterKeywordInput.value = '';
                     renderTransactions(currentActiveMonth, '');
                 }
