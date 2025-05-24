@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Expense Manager - Dashboard</title>
-    <link rel="stylesheet" href="style.css"> <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> </head>
-<body id="dashboard-page"> <div class="container">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body id="dashboard-page">
+    <div class="container">
         <header class="header">
             <a href="#" class="back-arrow">&#8592;</a>
             <h1>Expense Manager</h1>
-            <div class="profile-icon">P</div>
+            <div class="profile-icon">R</div>
         </header>
 
         <main class="main-content">
@@ -18,14 +21,14 @@
                     <canvas id="expenseChart"></canvas>
                     <div class="net-expense-overlay">
                         <span class="label">Net Expense</span>
-                        <span class="amount" id="netExpenseValue">₱ 0</span>
+                        <span class="amount" id="netExpenseValue">₱ 348.00</span>
                     </div>
                 </div>
                 <div class="legend">
                     <div class="legend-item"><span class="dot food"></span>Food <span class="percentage" id="foodPct">0%</span></div>
                     <div class="legend-item"><span class="dot medicines"></span>Medicines <span class="percentage" id="medicinesPct">0%</span></div>
                     <div class="legend-item"><span class="dot shopping"></span>Shopping <span class="percentage" id="shoppingPct">0%</span></div>
-                    <div class="legend-item"><span class="dot misc"></span>Misc. <span class="percentage" id="miscPct">0%</span></div>
+                    <div class="legend-item"><span class="dot misc"></span>Misc. <span class="percentage" id="miscPct">100%</span></div>
                 </div>
             </section>
 
@@ -36,11 +39,11 @@
                             <circle class="progress-ring-track" stroke="#E0E0E0" stroke-width="6" fill="transparent" r="34" cx="40" cy="40"/>
                             <circle class="progress-ring-progress" stroke="#FF5722" stroke-width="6" fill="transparent" r="34" cx="40" cy="40" style="stroke-dasharray: 213.6; stroke-dashoffset: 213.6;"/>
                         </svg>
-                        <span class="progress-text" id="remainingBalancePct">0%</span>
+                        <span class="progress-text" id="remainingBalancePct">-6.96%</span>
                     </div>
                     <div class="limit-details">
                         <span class="limit-title">Remaining Balance</span>
-                        <span class="limit-amount" id="remainingBalanceAmount">₱ 0 of ₱ 0</span>
+                        <span class="limit-amount" id="remainingBalanceAmount">₱ -348.00 of ₱ 0.00</span>
                     </div>
                 </div>
                 <a href="transactions.html" class="arrow-link">&#8250;</a>
@@ -51,12 +54,12 @@
                     <h2>Transactions on your hands!</h2>
                     <a href="transactions.html" class="button">View</a>
                 </div>
-                <img src="https://cdni.iconscout.com/illustration/premium/thumb/online-payment-mobile-money-transfer-4251717-3532729.png" alt="Transactions Illustration" class="promo-image">
-            </section>
+                </section>
 
             <section class="card pending-bills-card" style="display: none;">
-                </section>
+            </section>
         </main>
     </div>
-    <script src="script.js"></script> </body>
+    <script src="script.js"></script>
+</body>
 </html>
