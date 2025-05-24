@@ -195,21 +195,16 @@ body {
     align-items: center;
 }
 
-/* Updated positioning for progress text */
 .limit-progress-wrapper {
-    position: relative; /* Essential: Establishes a positioning context for children */
-    width: 80px;
-    height: 80px;
-    /* Use flexbox to center content (the SVG) inside if wrapper size is different */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    position: relative;
+    width: 80px; /* Explicit width */
+    height: 80px; /* Explicit height */
     flex-shrink: 0;
 }
 
 .progress-circle {
-    width: 100%; /* Make SVG fill its wrapper */
-    height: 100%; /* Make SVG fill its wrapper */
+    width: 100%;
+    height: 100%;
 }
 
 .progress-ring-track {
@@ -227,28 +222,30 @@ body {
     transform-origin: 50% 50%;
 }
 
-/* This is the key change for centering the text */
+/* Refined progress text positioning */
 .progress-text {
-    position: absolute; /* Position relative to .limit-progress-wrapper */
-    top: 50%; /* Move top edge to vertical center */
-    left: 50%; /* Move left edge to horizontal center */
-    transform: translate(-50%, -50%); /* Shift element back by half its own width/height to truly center it */
-    font-size: 1.1rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.1rem; /* Adjust as needed */
     font-weight: bold;
     color: var(--text-dark);
-    pointer-events: none; /* Allows clicks to pass through to elements below */
-    z-index: 1; /* Ensure text is above the SVG circles */
-    text-align: center; /* Ensures the text itself is centered if it wraps (though unlikely for percentages) */
-    /* Add line-height if the font size makes it too tall for perfect vertical centering */
-    line-height: 1; /* Adjust as needed, often 1 or slightly less than font-size */
+    pointer-events: none;
+    z-index: 1;
+    text-align: center;
+    line-height: 1.1; /* Slightly adjust line-height for better vertical centering */
+    /* Ensure no unwanted spacing from inherited properties */
+    margin: 0;
+    padding: 0;
 }
 
 
 .limit-details {
     display: flex;
     flex-direction: column;
-    flex-grow: 1; /* Allow details to take available space */
-    margin-left: 15px; /* Add some space between circle and text */
+    flex-grow: 1;
+    margin-left: 15px;
 }
 
 .limit-title {
@@ -279,6 +276,12 @@ body {
     color: var(--text-dark);
     padding: 15px 20px;
     min-height: 100px;
+    overflow: hidden; /* Ensure image doesn't overflow card */
+}
+
+.promo-text {
+    flex-basis: 60%; /* Adjust width for text */
+    padding-right: 10px; /* Space between text and image */
 }
 
 .promo-text h2 {
@@ -303,6 +306,16 @@ body {
 .promo-text .button:hover {
     background-color: #f0f0f0;
 }
+
+.card-illustration {
+    width: 100px; /* Fixed width for the image */
+    height: auto; /* Maintain aspect ratio */
+    display: block; /* Remove extra space below image */
+    flex-basis: 40%; /* Adjust width for image */
+    max-width: 120px; /* A bit more flexible max-width */
+    object-fit: contain; /* Ensure image fits without cropping */
+}
+
 
 /* Transactions Page Styles (transactions.html) */
 .months-nav {
