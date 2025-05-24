@@ -1,46 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
-
-:root {
-    --primary-bg: #f5f5f5;
-    --card-bg: #ffffff;
-    --text-dark: #333333;
-    --text-light: #666666;
-    --accent-orange: #FFA500; /* For Shopping/General accents */
-    --accent-blue: #4A90E2;  /* For Misc./Other accents */
-    --accent-green: #4CAF50; /* For Food/Positive */
-    --accent-red: #FF5722;   /* For Medicines/Negative */
-    --border-color: #E0E0E0;
-    --shadow-light: rgba(0, 0, 0, 0.05);
-}
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    font-family: 'Poppins', sans-serif;
-    background-color: var(--primary-bg);
-    color: var(--text-dark);
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-.container {
-    max-width: 480px; /* Typical mobile width */
-    margin: 0 auto;
-    background-color: var(--primary-bg);
-    min-height: 100vh;
-    box-shadow: 0 0 20px var(--shadow-light);
-    overflow: hidden; /* To contain floated elements and shadows */
-}
+/* ... (existing styles) ... */
 
 .header {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: space-between; /* Ensures space between left, center, right */
     padding: 1rem 1.2rem;
     background-color: var(--card-bg);
     border-bottom: 1px solid var(--border-color);
@@ -54,21 +17,38 @@ body {
     font-size: 1.2rem;
     font-weight: 600;
     color: var(--text-dark);
-    margin: 0 auto; /* Center the title */
+    /* Remove 'margin: 0 auto;' if it's there to allow flexible centering */
+    margin: 0; /* Ensures it doesn't push the right content too much */
+    flex-grow: 1; /* Allows it to take available space */
+    text-align: center; /* Center the title itself */
 }
 
 .header .back-arrow {
     font-size: 1.5rem;
     color: var(--text-dark);
     text-decoration: none;
-    padding-right: 1rem;
+    margin-right: 1rem; /* Add some space to the right */
+    flex-shrink: 0; /* Prevent it from shrinking */
+}
+
+.header-right-icons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* Space between date and icon */
+    flex-shrink: 0; /* Prevent it from shrinking */
+}
+
+.current-date-display {
+    font-size: 0.95rem; /* Adjust font size to match the image */
+    color: var(--text-dark);
+    font-weight: 500;
 }
 
 .header .profile-icon,
 .header .calendar-icon {
     width: 36px;
     height: 36px;
-    background-color: var(--accent-red);
+    background-color: var(--accent-red); /* Keep calendar icon background */
     color: white;
     border-radius: 50%;
     display: flex;
@@ -76,427 +56,8 @@ body {
     justify-content: center;
     font-size: 1.1rem;
     font-weight: 600;
-    text-decoration: none; /* For calendar icon */
-}
-
-.main-content {
-    padding: 1.2rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-}
-
-.card {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 1.2rem;
-    box-shadow: 0 4px 10px var(--shadow-light);
-}
-
-/* Summary Card (Dashboard) */
-.summary-card {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.chart-container {
-    position: relative;
-    width: 180px; /* Adjust size as needed */
-    height: 180px;
-    margin-bottom: 1rem;
-}
-
-#expenseChart {
-    width: 100% !important;
-    height: 100% !important;
-}
-
-.net-expense-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    pointer-events: none; /* Allows clicks to pass through to the canvas */
-}
-
-.net-expense-overlay .label {
-    display: block;
-    font-size: 0.85rem;
-    color: var(--text-light);
-    margin-bottom: 0.2rem;
-}
-
-.net-expense-overlay .amount {
-    display: block;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-dark);
-}
-
-.legend {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.8rem;
-    width: 100%;
-    padding-top: 1rem;
-    border-top: 1px solid var(--border-color);
-    margin-top: 1rem;
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    font-size: 0.9rem;
-    color: var(--text-dark);
-}
-
-.legend-item .dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    margin-right: 0.5rem;
-}
-
-.legend-item .percentage {
-    margin-left: auto;
-    font-weight: 500;
-}
-
-.dot.food { background-color: var(--accent-green); }
-.dot.medicines { background-color: var(--accent-red); }
-.dot.shopping { background-color: var(--accent-orange); }
-.dot.misc { background-color: var(--accent-blue); }
-
-
-/* Limit Card (Remaining Balance) */
-.limit-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.limit-progress {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.progress-circle {
-    position: relative;
-    width: 80px;
-    height: 80px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.progress-ring-track,
-.progress-ring-progress {
-    fill: none;
-    /* Use r = 34, stroke-width = 6 for a circle of 80x80 (diameter 68 + 2*6=80) */
-}
-
-.progress-ring-track {
-    stroke: var(--border-color);
-}
-
-.progress-ring-progress {
-    stroke: var(--accent-red); /* Color of the progress arc */
-    transform: rotate(-90deg); /* Start from top */
-    transform-origin: 50% 50%;
-    transition: stroke-dashoffset 0.5s ease-in-out;
-}
-
-.progress-text {
-    position: absolute;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-dark);
-}
-
-.limit-details {
-    display: flex;
-    flex-direction: column;
-}
-
-.limit-title {
-    font-size: 0.95rem;
-    color: var(--text-light);
-    margin-bottom: 0.2rem;
-}
-
-.limit-amount {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-dark);
-}
-
-.arrow-link {
-    font-size: 2rem;
-    color: var(--text-light);
     text-decoration: none;
-    padding-left: 1rem;
-}
-
-/* Transactions Promo Card */
-.transactions-promo-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: var(--accent-orange); /* Match image */
-    color: white;
-    padding: 1.5rem;
-    overflow: hidden; /* To keep image within bounds */
-}
-
-.promo-text {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.transactions-promo-card h2 {
-    font-size: 1.3rem;
-    font-weight: 600;
-    margin-bottom: 0.8rem;
-    line-height: 1.3;
-}
-
-.transactions-promo-card .button {
-    background-color: white;
-    color: var(--accent-orange);
-    padding: 0.7rem 1.5rem;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.95rem;
-    transition: background-color 0.2s ease;
-}
-
-.transactions-promo-card .button:hover {
-    background-color: #f0f0f0;
-}
-
-.promo-image {
-    width: 120px; /* Adjust as needed */
-    height: auto;
-    margin-left: 1rem;
-    /* Position image more precisely if needed */
-    position: relative;
-    bottom: -1.5rem; /* Lift a bit from bottom */
-    right: -0.5rem; /* Push right a bit */
-    filter: drop-shadow(4px 4px 8px rgba(0,0,0,0.2)); /* Add shadow to image */
-}
-
-/* Pending Bills/Transactions Button Card */
-.pending-bills-card {
-    background-color: var(--card-bg);
-    text-align: center;
-    padding: 0.5rem;
-    display: none; /* Hide this as it's replaced by the button link */
-}
-
-.transactions-button {
-    display: block; /* Make it a block-level button */
-    width: 100%;
-    padding: 1rem;
-    background-color: var(--accent-blue); /* Example color, adjust as needed */
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    text-decoration: none;
-    text-align: center;
-    transition: background-color 0.2s ease;
-}
-
-.transactions-button:hover {
-    background-color: #3a7bd5; /* Darker blue on hover */
-}
-
-
-/* Transactions Page Specific Styles */
-.month-selector {
-    display: flex;
-    overflow-x: auto;
-    padding: 0.8rem 1.2rem;
-    gap: 0.5rem;
-    background-color: var(--card-bg);
-    border-bottom: 1px solid var(--border-color);
-    white-space: nowrap; /* Prevent wrapping of buttons */
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-    scrollbar-width: none; /* Hide scrollbar for Firefox */
-    -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
-}
-
-.month-selector::-webkit-scrollbar {
-    display: none; /* Hide scrollbar for Chrome, Safari, Opera */
-}
-
-.month-button {
-    background-color: var(--primary-bg);
-    color: var(--text-light);
-    border: 1px solid var(--border-color);
-    padding: 0.6rem 1.2rem;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-    flex-shrink: 0; /* Prevent buttons from shrinking */
-}
-
-.month-button.active {
-    background-color: var(--accent-orange);
-    color: white;
-    border-color: var(--accent-orange);
-}
-
-.month-button:hover:not(.active) {
-    background-color: #ececec;
-    border-color: #d0d0d0;
-}
-
-.transactions-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 1.2rem 1rem; /* Adjust padding for transaction list */
-    margin-top: 1rem;
-}
-
-.transactions-header h2 {
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.filter-button {
-    background-color: var(--card-bg);
-    border: 1px solid var(--border-color);
-    color: var(--text-light);
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-}
-
-.filter-button::before {
-    content: "☰"; /* Hamburger icon for filter */
-    font-size: 0.9em;
-}
-
-
-.transactions-list {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 0 1.2rem; /* Inner padding for list items */
-    box-shadow: 0 4px 10px var(--shadow-light);
-}
-
-.transaction-group {
-    margin-bottom: 1rem;
-}
-
-.transaction-date-header {
-    font-size: 0.85rem;
-    color: var(--text-light);
-    font-weight: 500;
-    padding: 0.8rem 0;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 0.5rem;
-}
-
-.transaction-item {
-    display: flex;
-    align-items: center;
-    padding: 0.8rem 0;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.transaction-item:last-child {
-    border-bottom: none; /* No border for the last item */
-}
-
-.transaction-category-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    color: white;
-    margin-right: 0.8rem;
     flex-shrink: 0;
 }
 
-/* Category colors for transaction items */
-.category-food { background-color: var(--accent-green); }
-.category-medicines { background-color: var(--accent-red); }
-.category-shopping { background-color: var(--accent-orange); }
-.category-misc { background-color: var(--accent-blue); }
-.category-gain { background-color: #8BC34A; } /* A different green for gains */
-
-
-.transaction-details {
-    flex-grow: 1;
-}
-
-.transaction-name {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--text-dark);
-}
-
-.transaction-time {
-    font-size: 0.8rem;
-    color: var(--text-light);
-}
-
-.transaction-amount {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-dark);
-    margin-left: 0.5rem;
-    white-space: nowrap; /* Prevent amount from wrapping */
-}
-
-.transaction-amount.expense {
-    color: var(--accent-red); /* Red for expenses */
-}
-
-.transaction-amount.gain {
-    color: var(--accent-green); /* Green for gains */
-}
-
-/* Floating Action Button */
-.add-button {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    width: 60px;
-    height: 60px;
-    background-color: var(--accent-blue);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.5rem;
-    text-decoration: none;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    transition: background-color 0.2s ease;
-    z-index: 1000;
-}
-
-.add-button:hover {
-    background-color: #3a7bd5;
-}
+/* ... (rest of the styles) ... */
