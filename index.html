@@ -3,89 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Manager Dashboard</title>
-    <link rel="stylesheet" href="dashboard_style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Expense Manager - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="mobile-container">
-        <header class="dashboard-header">
-            <div class="header-left">
-                <span style="opacity: 0.5;">&lt;</span> 
-                <h1>Expense Manager</h1>
-            </div>
-            <div class="header-right">
-                <div class="profile-icon">R</div>
-            </div>
+    <div class="container">
+        <header class="header">
+            <a href="#" class="back-arrow">&#8592;</a>
+            <h1>Expense Manager</h1>
+            <div class="profile-icon">P</div>
         </header>
 
-        <main class="dashboard-main">
-            <section class="financial-summary-card card">
-                <h4>Financial Overview</h4>
-                <div class="summary-item">
-                    <span>Total Gains (This Month):</span>
-                    <span id="totalGainsValue" class="gains">₱0.00</span>
-                </div>
-                <div class="summary-item">
-                    <span>Total Expenses (This Month):</span>
-                    <span id="totalExpensesDisplayValue" class="expenses">₱0.00</span>
-                </div>
-                <hr class="summary-divider">
-                <div class="summary-item balance">
-                    <span>Remaining Balance:</span>
-                    <span id="remainingBalanceValue">₱0.00</span>
-                </div>
-            </section>
-
-            <section class="chart-section card">
-                <div class="donut-chart-container">
-                    <svg id="expenseDonutChart" viewBox="0 0 120 120"></svg>
-                    <div class="chart-center-text">
-                        <span class="net-expense-label">Total Expenses</span> <span id="totalExpensesForChartValue" class="net-expense-amount">₱0</span> </div>
-                </div>
-                <div id="chartLegend" class="chart-legend">
+        <main class="main-content">
+            <section class="card summary-card">
+                <div class="chart-container">
+                    <canvas id="expenseChart"></canvas>
+                    <div class="net-expense-overlay">
+                        <span class="label">Net Expense</span>
+                        <span class="amount" id="netExpenseValue">₱ 0</span>
                     </div>
-                <div class="chart-pagination-dots">
-                    <span class="dot active"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
+                </div>
+                <div class="legend">
+                    <div class="legend-item"><span class="dot food"></span>Food <span class="percentage" id="foodPct">0%</span></div>
+                    <div class="legend-item"><span class="dot medicines"></span>Medicines <span class="percentage" id="medicinesPct">0%</span></div>
+                    <div class="legend-item"><span class="dot shopping"></span>Shopping <span class="percentage" id="shoppingPct">0%</span></div>
+                    <div class="legend-item"><span class="dot misc"></span>Misc. <span class="percentage" id="miscPct">0%</span></div>
                 </div>
             </section>
 
-            <section class="expense-limit-section card" id="expenseLimitCard">
-                <div class="limit-progress-container">
-                    <svg id="limitCircularProgress" class="limit-progress-svg" viewBox="0 0 100 100">
-                        <circle class="progress-background" cx="50" cy="50" r="40"></circle>
-                        <circle id="limitProgressCircle" class="progress-bar" cx="50" cy="50" r="40"></circle>
-                    </svg>
-                    <div id="limitPercentage" class="limit-percentage-text">0%</div>
+            <section class="card limit-card">
+                <div class="limit-progress">
+                    <div class="progress-circle">
+                        <svg class="progress-ring" width="80" height="80">
+                            <circle class="progress-ring-track" stroke="#E0E0E0" stroke-width="6" fill="transparent" r="34" cx="40" cy="40"/>
+                            <circle class="progress-ring-progress" stroke="#FF5722" stroke-width="6" fill="transparent" r="34" cx="40" cy="40" style="stroke-dasharray: 213.6; stroke-dashoffset: 213.6;"/>
+                        </svg>
+                        <span class="progress-text" id="remainingBalancePct">0%</span>
+                    </div>
+                    <div class="limit-details">
+                        <span class="limit-title">Remaining Balance</span>
+                        <span class="limit-amount" id="remainingBalanceAmount">₱ 0 of ₱ 0</span>
+                    </div>
                 </div>
-                <div class="limit-details">
-                    <p class="limit-title">Monthly expense limit</p>
-                    <p class="limit-values">
-                        <span id="currentMonthExpenseForLimit">₱0</span> of <span id="monthlyLimitTotal">₱10,000</span>
-                    </p>
-                </div>
-                <div class="limit-arrow">&gt;</div>
+                <a href="transactions.html" class="arrow-link">&#8250;</a>
             </section>
 
-            <section class="transactions-promo-card card">
-                <div class="promo-text-content">
-                    <h3>Transactions on your hands!</h3>
-                    <p>View all your recent spending activity.</p>
-                    <a href="spends.html" class="view-button">View</a>
+            <section class="card transactions-promo-card">
+                <div class="promo-text">
+                    <h2>Transactions on your hands!</h2>
+                    <a href="transactions.html" class="button">View</a>
                 </div>
-                <img src="https://via.placeholder.com/100x80?text=App+Art" alt="Illustration" class="promo-illustration">
+                <img src="https://assets-global.website-files.com/64b584a56a646c0757530663/64d7c588ff23f5b823b18420_mobile-wallet-app-development.webp" alt="Transactions Illustration" class="promo-image">
             </section>
 
-            <section class="pending-bills-section">
-                <h4>Pending Bills</h4>
-                <div id="pendingBillsList">
-                    <div class="bill-item-placeholder">Loading bills...</div>
-                </div>
+            <section class="card pending-bills-card">
+                <a href="transactions.html" class="transactions-button">Transactions</a>
             </section>
         </main>
     </div>
-    <script src="dashboard_script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
