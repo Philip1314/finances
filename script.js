@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // IMPORTANT: Ensure this CSV URL is correct and publicly accessible from your Google Sheet.
     // This URL is crucial for fetching your transaction data.
+    // Replace with your actual published CSV URL
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv';
 
     // Helper function to parse CSV data from the fetched text.
@@ -375,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const nameSpan = document.createElement('span');
                     nameSpan.classList.add('transaction-name');
                     // Display Description first, fallback to 'What kind?' if no description
-                    nameSpan.textContent = entry.Description || entry['What kind?'] || 'N/A';
+                    nameSpan.textContent = entry.Description || entry['What kind'] || 'N/A';
                     detailsDiv.appendChild(nameSpan);
 
                     const timeSpan = document.createElement('span');
