@@ -3,47 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spends</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Expense Manager Dashboard</title>
+    <link rel="stylesheet" href="dashboard_style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="mobile-container">
-        <header>
+        <header class="dashboard-header">
             <div class="header-left">
-                <span>&lt;</span>
-                <h1>Spends</h1>
+                <span style="opacity: 0.5;">&lt;</span> 
+                <h1>Expense Manager</h1>
             </div>
             <div class="header-right">
-                <span>📅</span>
-                <span class="filter-icon">☰</span>
+                <div class="profile-icon">R</div>
             </div>
         </header>
 
-        <nav class="month-tabs">
-            <button class="tab-button">Jan</button>
-            <button class="tab-button active">Feb</button>
-            <button class="tab-button">Mar</button>
-            <button class="tab-button">Apr</button>
-            <button class="tab-button">May</button>
-            <button class="tab-button">Jun</button>
-        </nav>
+        <main class="dashboard-main">
+            <section class="financial-summary-card card">
+                <h4>Financial Overview</h4>
+                <div class="summary-item">
+                    <span>Total Gains (This Month):</span>
+                    <span id="totalGainsValue" class="gains">₱0.00</span>
+                </div>
+                <div class="summary-item">
+                    <span>Total Expenses (This Month):</span>
+                    <span id="totalExpensesDisplayValue" class="expenses">₱0.00</span>
+                </div>
+                <hr class="summary-divider">
+                <div class="summary-item balance">
+                    <span>Remaining Balance:</span>
+                    <span id="remainingBalanceValue">₱0.00</span>
+                </div>
+            </section>
 
-        <main>
-            <div class="transactions-header">
-                <h2>Transactions</h2>
-                <button class="filter-button-main">Filter</button>
-            </div>
-            <div id="transactions-list">
-                <div class="loading-placeholder">Loading transactions...</div>
-            </div>
+            <section class="chart-section card">
+                <div class="donut-chart-container">
+                    <svg id="expenseDonutChart" viewBox="0 0 120 120"></svg>
+                    <div class="chart-center-text">
+                        <span class="net-expense-label">Total Expenses</span> <span id="totalExpensesForChartValue" class="net-expense-amount">₱0</span> </div>
+                </div>
+                <div id="chartLegend" class="chart-legend">
+                    </div>
+                <div class="chart-pagination-dots">
+                    <span class="dot active"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            </section>
+
+            <section class="expense-limit-section card" id="expenseLimitCard">
+                <div class="limit-progress-container">
+                    <svg id="limitCircularProgress" class="limit-progress-svg" viewBox="0 0 100 100">
+                        <circle class="progress-background" cx="50" cy="50" r="40"></circle>
+                        <circle id="limitProgressCircle" class="progress-bar" cx="50" cy="50" r="40"></circle>
+                    </svg>
+                    <div id="limitPercentage" class="limit-percentage-text">0%</div>
+                </div>
+                <div class="limit-details">
+                    <p class="limit-title">Monthly expense limit</p>
+                    <p class="limit-values">
+                        <span id="currentMonthExpenseForLimit">₱0</span> of <span id="monthlyLimitTotal">₱10,000</span>
+                    </p>
+                </div>
+                <div class="limit-arrow">&gt;</div>
+            </section>
+
+            <section class="transactions-promo-card card">
+                <div class="promo-text-content">
+                    <h3>Transactions on your hands!</h3>
+                    <p>View all your recent spending activity.</p>
+                    <a href="spends.html" class="view-button">View</a>
+                </div>
+                <img src="https://via.placeholder.com/100x80?text=App+Art" alt="Illustration" class="promo-illustration">
+            </section>
+
+            <section class="pending-bills-section">
+                <h4>Pending Bills</h4>
+                <div id="pendingBillsList">
+                    <div class="bill-item-placeholder">Loading bills...</div>
+                </div>
+            </section>
         </main>
-
-        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header" target="_blank" class="fab">
-            +
-        </a>
     </div>
-
-    <script src="script.js"></script>
+    <script src="dashboard_script.js"></script>
 </body>
 </html>
