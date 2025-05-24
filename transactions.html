@@ -6,17 +6,18 @@
     <title>Expense Manager - Transactions</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body id="transactions-page">
     <div class="container">
         <header class="header">
             <a href="index.html" class="back-arrow">&#8592;</a>
             <h1>Spends</h1>
-            <a href="#" class="calendar-icon">📅</a>
+            <div class="header-right-icons"> <span id="currentDateDisplay" class="current-date-display"></span> <a href="#" class="calendar-icon">📅</a>
+            </div>
         </header>
 
         <nav class="month-selector">
             <button class="month-button" data-month="1">Jan</button>
-            <button class="month-button active" data-month="2">Feb</button>
+            <button class="month-button" data-month="2">Feb</button>
             <button class="month-button" data-month="3">Mar</button>
             <button class="month-button" data-month="4">Apr</button>
             <button class="month-button" data-month="5">May</button>
