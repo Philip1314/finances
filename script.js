@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Corrected CSV URL for reading data from your Google Sheet
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv';
 
-    // THE GOOGLE FORM LINK FOR THE ADD BUTTON - RESTORED
+    // THE GOOGLE FORM LINK FOR THE ADD BUTTON
     const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header';
 
     function parseCSV(csv) {
@@ -434,11 +434,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Common Logic & Event Listeners ---
 
-    // Floating Action Button (FAB) click handler - RESTORED TO GOOGLE FORM URL
+    // Floating Action Button (FAB) click handler - Now opens in a new tab
     const fabButton = document.querySelector('.fab-button');
     if (fabButton) {
         fabButton.addEventListener('click', () => {
-            window.location.href = GOOGLE_FORM_URL; // Navigate to the Google Form
+            window.open(GOOGLE_FORM_URL, '_blank'); // Open in new tab
         });
     }
 
