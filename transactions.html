@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Manager - Transactions</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <a href="index.html" class="back-arrow">&#8592;</a>
+            <h1>Spends</h1>
+            <a href="#" class="calendar-icon">📅</a>
+        </header>
+
+        <nav class="month-selector">
+            <button class="month-button" data-month="1">Jan</button>
+            <button class="month-button active" data-month="2">Feb</button>
+            <button class="month-button" data-month="3">Mar</button>
+            <button class="month-button" data-month="4">Apr</button>
+            <button class="month-button" data-month="5">May</button>
+            <button class="month-button" data-month="6">Jun</button>
+            <button class="month-button" data-month="7">Jul</button>
+            <button class="month-button" data-month="8">Aug</button>
+            <button class="month-button" data-month="9">Sep</button>
+            <button class="month-button" data-month="10">Oct</button>
+            <button class="month-button" data-month="11">Nov</button>
+            <button class="month-button" data-month="12">Dec</button>
+        </nav>
+
+        <main class="main-content">
+            <div class="transactions-header">
+                <h2>Transactions</h2>
+                <button class="filter-button">Filter</button>
+            </div>
+            <div id="transactionsList" class="transactions-list">
+                </div>
+        </main>
+
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header" target="_blank" class="add-button">+</a>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
