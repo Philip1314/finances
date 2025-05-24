@@ -103,6 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const csv = await response.text();
             const data = parseCSV(csv);
 
+            console.log("Dashboard - Raw Data Fetched:", data); // DEBUG: See all data
+
             let totalExpensesAmount = 0; // Accumulates all expense amounts for remaining balance
             let totalGainsAmount = 0;   // Accumulates all gain amounts for remaining balance
 
@@ -117,16 +119,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
             data.forEach(entry => {
                 const amount = parseFloat(entry.Amount);
-                // Skip entries with invalid amounts or missing Type/What kind?
-                if (isNaN(amount) || !entry.Type || !entry['What kind?']) return;
+                // Check if Amount is a valid number AND if Type and What kind? exist
+                if (isNaN(amount) || !entry.Type || !entry['What kind?']) {
+                    console.warn('Dashboard - Skipping malformed entry (missing data or invalid amount):', entry);
+                    return; // Skip entries that cannot be processed
+                }
 
                 const entryType = entry.Type.toLowerCase();
                 const entryWhatKind = entry['What kind?'].toLowerCase();
 
                 if (entryType === 'expenses') {
-                    totalExpensesAmount += amount; // Always deduct expenses from balance
+                    totalExpensesAmount += amount; // Sum all expenses
+                    console.log(`Dashboard - Added expense: ${amount} (${entryWhatKind}). Total Expenses: ${totalExpensesAmount}`); // DEBUG
 
-                    // Categorize for the donut chart
+                    // Categorize for the donut chart (only specific expense types are tracked here)
                     if (entryWhatKind === 'food' || entryWhatKind === 'groceries') {
                         expenseCategoriesForChart.Food += amount;
                     } else if (entryWhatKind === 'medicines') {
@@ -134,24 +140,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (entryWhatKind === 'online shopping') {
                         expenseCategoriesForChart.Shopping += amount;
                     } else {
-                        // Any other expense, including 'Transportation', 'Utility Bills',
-                        // and 'Allowance' (when it's an expense), goes into 'Misc' for the chart.
+                        // All other expenses (including 'Allowance' when it's an expense, Transportation, Utility Bills)
+                        // are grouped under 'Misc' for the dashboard chart.
                         expenseCategoriesForChart.Misc += amount;
                     }
                 } else if (entryType === 'gains') {
-                    totalGainsAmount += amount; // Always add gains to balance
+                    totalGainsAmount += amount; // Sum all gains
+                    console.log(`Dashboard - Added gain: ${amount} (${entryWhatKind}). Total Gains: ${totalGainsAmount}`); // DEBUG
                 }
             });
 
+            console.log("Dashboard - Final Total Expenses:", totalExpensesAmount); // DEBUG
+            console.log("Dashboard - Final Total Gains:", totalGainsAmount);     // DEBUG
+
             // Display Net Expense (which is total categorized expenses)
+            // This now represents the sum of ALL expenses, irrespective of how they're broken down in the donut chart.
             const netExpenseForDisplay = totalExpensesAmount;
             document.getElementById('netExpenseValue').textContent = formatCurrency(netExpenseForDisplay);
 
             // Calculate Remaining Balance
             const remainingBalance = totalGainsAmount - totalExpensesAmount;
-            // The budget should be 0 unless there are actual gains.
-            // If totalGainsAmount is 0, the totalIncomeOrBudget will be 0.
-            const totalIncomeOrBudget = totalGainsAmount; // Sets budget to 0 if no gains
+            // The budget is the total amount of gains. If no gains, budget is 0.
+            const totalIncomeOrBudget = totalGainsAmount;
 
             document.getElementById('remainingBalanceAmount').textContent = `${formatCurrency(remainingBalance)} of ${formatCurrency(totalIncomeOrBudget)}`;
 
@@ -160,8 +170,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (totalIncomeOrBudget > 0) { // Only calculate if there's a budget to divide by
                 remainingBalancePercentage = (remainingBalance / totalIncomeOrBudget) * 100;
             }
-            // Ensure percentage is between 0 and 100
-            const displayPercentage = isNaN(remainingBalancePercentage) ? 0 : Math.max(0, Math.min(100, remainingBalancePercentage));
+            // Ensure percentage is between 0 and 100 (or can go negative if overspent)
+            const displayPercentage = isNaN(remainingBalancePercentage) ? 0 : remainingBalancePercentage; // Allow negative
             document.getElementById('remainingBalancePct').textContent = `${Math.round(displayPercentage)}%`;
 
             // Update Progress Circle (visual representation of remaining balance)
@@ -170,18 +180,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const radius = 34;
             const circumference = 2 * Math.PI * radius;
 
-            if (remainingBalancePercentage >= 100) {
+            if (displayPercentage >= 100) {
                 progressOffset = 0; // Full circle (100% or more remaining)
-            } else if (remainingBalancePercentage > 0) {
+            } else if (displayPercentage > 0) {
                 // Fill based on remaining percentage
-                progressOffset = circumference - (remainingBalancePercentage / 100) * circumference;
-                if (remainingBalancePercentage < 25) { // Change color if balance is low
+                progressOffset = circumference - (displayPercentage / 100) * circumference;
+                if (displayPercentage < 25) { // Change color if balance is low
                     progressColor = 'var(--accent-orange)';
                 }
-            } else { // remainingBalancePercentage <= 0 (balance is zero or negative / overspent)
+            } else { // displayPercentage <= 0 (balance is zero or negative / overspent)
                 progressOffset = circumference; // Circle fully empty (or full red indicating overspent)
                 progressColor = 'var(--accent-red)'; // Red for overspent
             }
+
 
             const progressCircle = document.querySelector('.progress-ring-progress');
             if (progressCircle) {
@@ -198,14 +209,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 expenseCategoriesForChart.Shopping,
                 expenseCategoriesForChart.Misc,
             ];
-            const categoryColors = [
-                'var(--accent-green)',  // Food
-                'var(--accent-red)',    // Medicines
-                'var(--accent-orange)', // Shopping
-                'var(--accent-blue)'    // Misc
-            ];
-
             const totalCategoryExpenseForChart = categoryAmounts.reduce((sum, amount) => sum + amount, 0);
+
+            console.log("Dashboard - Expense Categories for Chart:", expenseCategoriesForChart); // DEBUG
+            console.log("Dashboard - Total for Chart:", totalCategoryExpenseForChart);         // DEBUG
 
             // Update legend percentages below the chart
             document.getElementById('foodPct').textContent = `${totalCategoryExpenseForChart > 0 ? Math.round((expenseCategoriesForChart.Food / totalCategoryExpenseForChart) * 100) : 0}%`;
@@ -220,6 +227,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (window.expenseChartInstance) {
                     window.expenseChartInstance.destroy();
                 }
+                const categoryColors = [
+                    'var(--accent-green)',  // Food
+                    'var(--accent-red)',    // Medicines
+                    'var(--accent-orange)', // Shopping
+                    'var(--accent-blue)'    // Misc
+                ];
                 window.expenseChartInstance = new Chart(ctx.getContext('2d'), {
                     type: 'doughnut',
                     data: {
@@ -276,6 +289,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const csv = await response.text();
             let data = parseCSV(csv);
 
+            console.log("Transactions Page - Raw Data Fetched:", data); // DEBUG: See all data
+
             // Filter out entries that are missing critical data or have invalid dates/amounts
             data = data.filter(entry => {
                 const amount = parseFloat(entry.Amount);
@@ -327,7 +342,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (a === 'Yesterday') return -1;
                 if (b === 'Yesterday') return 1;
                 // For actual dates, sort descending
-                return new Date(b) - new Date(a);
+                // Need to parse actual dates for correct chronological sorting if they are not "Today" or "Yesterday"
+                const dateA = new Date(a);
+                const dateB = new Date(b);
+                if (!isNaN(dateA) && !isNaN(dateB)) {
+                    return dateB - dateA;
+                }
+                return 0; // No change if dates are invalid
             });
 
 
@@ -341,12 +362,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 groupDiv.appendChild(headerDiv);
 
                 // Sort transactions within each date group by time (if 'Time' column exists)
+                // Assuming Time format is HH:MM or HH:MM:SS
                 groupedTransactions[dateHeader].sort((a, b) => {
-                    const timeA = a.Time ? a.Time.split(':').map(Number) : [0, 0];
-                    const timeB = b.Time ? b.Time.split(':').map(Number) : [0, 0];
+                    const timeA = a.Time ? a.Time.split(':').map(Number) : [0, 0, 0];
+                    const timeB = b.Time ? b.Time.split(':').map(Number) : [0, 0, 0];
                     if (timeA[0] !== timeB[0]) return timeA[0] - timeB[0]; // Compare hours
-                    return timeA[1] - timeB[1]; // Compare minutes
+                    if (timeA[1] !== timeB[1]) return timeA[1] - timeB[1]; // Compare minutes
+                    return timeA[2] - timeB[2]; // Compare seconds (if present)
                 });
+
 
                 groupedTransactions[dateHeader].forEach(entry => {
                     const itemDiv = document.createElement('div');
@@ -380,7 +404,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const nameSpan = document.createElement('span');
                     nameSpan.classList.add('transaction-name');
                     // PRIORITIZE 'Description', then 'What kind?', then 'N/A'
-                    nameSpan.textContent = entry.Description && entry.Description.trim() !== '' ? entry.Description : entry['What kind?'] || 'N/A';
+                    // Ensure trimming to handle cases where strings might be just whitespace
+                    nameSpan.textContent = entry.Description && entry.Description.trim() !== '' ? entry.Description : (entry['What kind?'] && entry['What kind?'].trim() !== '' ? entry['What kind?'] : 'N/A');
                     detailsDiv.appendChild(nameSpan);
 
                     const timeSpan = document.createElement('span');
