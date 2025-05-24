@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update Progress Circle (Remaining Balance)
             let progressOffset = 0;
             let progressColor = 'var(--accent-green)'; // Default color for positive balance
-            const radius = 34; // Radius of the circle
+            const radius = 34; // Radius of the circle for SVG
             const circumference = 2 * Math.PI * radius; // Circumference for SVG dasharray
 
             if (displayPercentage >= 100) { // Full progress or more
