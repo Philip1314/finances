@@ -55,7 +55,6 @@ body {
 #dashboard-page .header h1 {
     flex-grow: 1; /* Allow title to take available space */
     text-align: left; /* Left-align the title */
-    /* Adjustments for centering are not needed when aligning left */
     margin-right: 0;
     padding-left: 0;
 }
@@ -196,21 +195,21 @@ body {
     align-items: center;
 }
 
-.limit-progress {
+/* Updated positioning for progress text */
+.limit-progress-wrapper {
+    position: relative; /* Essential: Establishes a positioning context for children */
+    width: 80px;
+    height: 80px;
+    /* Use flexbox to center content (the SVG) inside if wrapper size is different */
     display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 15px;
+    flex-shrink: 0;
 }
 
 .progress-circle {
-    position: relative; /* Essential for positioning progress-text */
-    width: 80px;
-    height: 80px;
-}
-
-.progress-ring {
-    transform: rotate(-90deg);
-    transform-origin: 50% 50%;
+    width: 100%; /* Make SVG fill its wrapper */
+    height: 100%; /* Make SVG fill its wrapper */
 }
 
 .progress-ring-track {
@@ -224,24 +223,32 @@ body {
     fill: transparent;
     stroke-width: 6;
     transition: stroke-dashoffset 0.35s, stroke 0.35s;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
 }
 
-/* Adjusted progress-text to be inside the circle */
+/* This is the key change for centering the text */
 .progress-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%); /* Center horizontally and vertically */
+    position: absolute; /* Position relative to .limit-progress-wrapper */
+    top: 50%; /* Move top edge to vertical center */
+    left: 50%; /* Move left edge to horizontal center */
+    transform: translate(-50%, -50%); /* Shift element back by half its own width/height to truly center it */
     font-size: 1.1rem;
     font-weight: bold;
     color: var(--text-dark);
-    /* Ensure it's above the SVG elements if needed, though pointer-events: none on SVG might help */
     pointer-events: none; /* Allows clicks to pass through to elements below */
+    z-index: 1; /* Ensure text is above the SVG circles */
+    text-align: center; /* Ensures the text itself is centered if it wraps (though unlikely for percentages) */
+    /* Add line-height if the font size makes it too tall for perfect vertical centering */
+    line-height: 1; /* Adjust as needed, often 1 or slightly less than font-size */
 }
+
 
 .limit-details {
     display: flex;
     flex-direction: column;
+    flex-grow: 1; /* Allow details to take available space */
+    margin-left: 15px; /* Add some space between circle and text */
 }
 
 .limit-title {
@@ -260,6 +267,7 @@ body {
     color: var(--text-light);
     text-decoration: none;
     padding-left: 10px;
+    flex-shrink: 0;
 }
 
 /* Transactions Promo Card */
