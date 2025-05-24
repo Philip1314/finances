@@ -9,15 +9,15 @@
     --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1); /* Medium shadow */
 
     /* Accent Colors (for charts, buttons, etc.) */
-    --accent-green: #4CAF50; /* Green for gains/positive */
-    --accent-red: #F44336; /* Red for expenses/negative */
+    --accent-green: #4CAF50; /* Green for gains/positive/Food */
+    --accent-red: #F44336; /* Red for expenses/negative/Medicines */
     --accent-orange: #FF9800; /* Orange for warnings/shopping */
     --accent-blue: #2196F3; /* Blue for miscellaneous/buttons */
     --accent-purple: #9C27B0; /* New color for a category if needed */
 }
 
 body {
-    font-family: 'Inter', sans-serif; /* Using Inter if available, otherwise generic sans-serif */
+    font-family: 'Inter', sans-serif;
     margin: 0;
     padding: 0;
     background-color: var(--primary-bg);
@@ -28,18 +28,17 @@ body {
 }
 
 .container {
-    max-width: 500px; /* Standard mobile width */
+    max-width: 500px;
     margin: 0 auto;
     background-color: var(--primary-bg);
     min-height: 100vh;
     box-shadow: var(--shadow-md);
-    overflow: hidden; /* To contain floated/flex items */
+    overflow: hidden;
 }
 
 /* Header */
 .header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
     padding: 15px 20px;
     background-color: var(--card-bg);
@@ -49,57 +48,71 @@ body {
     z-index: 1000;
 }
 
-.header h1 {
-    font-size: 1.3rem;
-    margin: 0;
-    color: var(--text-dark);
-    font-weight: 600;
+/* Specific to dashboard header */
+#dashboard-page .header {
+    justify-content: space-between; /* Space out title, back arrow, profile icon */
+}
+#dashboard-page .header h1 {
+    flex-grow: 1; /* Allow title to take available space */
+    text-align: center; /* Center the title */
+    margin-right: -36px; /* Offset profile icon width to truly center title */
+}
+#dashboard-page .header .back-arrow {
+    padding-right: 0; /* No extra padding for dashboard back arrow */
+}
+
+
+/* Specific to transactions.html header */
+#transactions-page .header {
+    /* Align arrow left, date in middle-ish, profile icon right */
+    justify-content: space-between; /* This will push arrow to left, profile to right */
+}
+
+#transactions-page .header .date-display {
+    /* Adjust margin to visually align date display */
+    margin-left: auto; /* Push it to the right of the arrow */
+    margin-right: 15px; /* Space before profile icon */
 }
 
 .back-arrow {
     font-size: 1.8rem;
     color: var(--text-dark);
     text-decoration: none;
-    padding-right: 15px; /* Space for the arrow */
+    padding-right: 15px; /* Space for the arrow (default for all pages) */
 }
 
 .profile-icon {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background-color: var(--accent-orange); /* Example color */
+    background-color: var(--accent-orange);
     color: white;
     display: flex;
     justify-content: center;
     align-items: center;
     font-weight: bold;
     font-size: 1.1rem;
-}
-
-/* Specific to transactions.html header */
-.header-content-right {
-    display: flex;
-    align-items: center;
-    gap: 15px; /* Space between date and profile icon */
+    flex-shrink: 0; /* Prevent icon from shrinking */
 }
 
 .date-display {
     text-align: center;
     font-size: 0.9rem;
     line-height: 1.2;
-    color: var(--text-dark); /* Ensure text is dark */
+    color: var(--text-dark);
     font-weight: 500;
+    /* No flex properties needed here as it's directly in the header */
 }
 
 .date-display span {
-    display: block; /* Make month and day stack */
+    display: block;
 }
 .date-display span:first-child {
-    font-size: 0.8rem; /* Smaller for month */
-    color: var(--text-light); /* Lighter for month */
+    font-size: 0.8rem;
+    color: var(--text-light);
 }
 .date-display span:last-child {
-    font-size: 1.1rem; /* Larger for day */
+    font-size: 1.1rem;
     font-weight: bold;
 }
 
@@ -127,8 +140,8 @@ body {
 
 .chart-container {
     position: relative;
-    width: 200px; /* Adjust as needed */
-    height: 200px; /* Adjust as needed */
+    width: 200px;
+    height: 200px;
     margin-bottom: 20px;
 }
 
@@ -143,7 +156,7 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
-    pointer-events: none; /* Allows clicks to pass through to chart */
+    pointer-events: none;
 }
 
 .net-expense-overlay .label {
@@ -204,13 +217,13 @@ body {
 
 .progress-circle {
     position: relative;
-    width: 80px; /* SVG width */
-    height: 80px; /* SVG height */
+    width: 80px;
+    height: 80px;
 }
 
 .progress-ring {
-    transform: rotate(-90deg); /* Start from top */
-    transform-origin: 50% 50%; /* Rotate around center */
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
 }
 
 .progress-ring-track {
@@ -220,10 +233,10 @@ body {
 }
 
 .progress-ring-progress {
-    stroke: var(--accent-green); /* Default green, updated by JS */
+    stroke: var(--accent-green);
     fill: transparent;
     stroke-width: 6;
-    transition: stroke-dashoffset 0.35s, stroke 0.35s; /* Smooth animation */
+    transition: stroke-dashoffset 0.35s, stroke 0.35s;
 }
 
 .progress-text {
@@ -261,13 +274,13 @@ body {
 
 /* Transactions Promo Card */
 .transactions-promo-card {
-    background-color: #FFC107; /* Yellowish background */
+    background-color: #FFC107;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: var(--text-dark); /* Ensure text is readable on yellow */
-    padding: 15px 20px; /* Adjust padding for better look */
-    min-height: 100px; /* Give it some height */
+    color: var(--text-dark);
+    padding: 15px 20px;
+    min-height: 100px;
 }
 
 .promo-text h2 {
@@ -278,7 +291,7 @@ body {
 }
 
 .promo-text .button {
-    background-color: var(--card-bg); /* White button */
+    background-color: var(--card-bg);
     color: var(--text-dark);
     padding: 8px 15px;
     border-radius: 8px;
@@ -290,28 +303,21 @@ body {
 }
 
 .promo-text .button:hover {
-    background-color: #f0f0f0; /* Slightly darker on hover */
-}
-
-/* This image is removed from HTML, but keeping style in case it's added back differently */
-.promo-image {
-    max-width: 80px; /* Adjust size */
-    height: auto;
-    margin-left: 15px;
+    background-color: #f0f0f0;
 }
 
 /* Transactions Page Styles (transactions.html) */
 .months-nav {
     display: flex;
-    overflow-x: auto; /* Allows horizontal scrolling if many months */
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     padding: 10px 20px;
-    gap: 10px; /* Space between buttons */
+    gap: 10px;
     background-color: var(--card-bg);
     border-bottom: 1px solid var(--border-color);
-    white-space: nowrap; /* Prevent wrapping of buttons */
-    /* Align items to start and allow overflow */
+    white-space: nowrap;
     justify-content: flex-start; /* Ensure months start from left */
+    align-items: center; /* Vertically align buttons */
 }
 
 .month-button {
@@ -323,26 +329,26 @@ body {
     color: var(--text-dark);
     cursor: pointer;
     transition: background-color 0.2s, border-color 0.2s;
-    flex-shrink: 0; /* Prevent buttons from shrinking */
+    flex-shrink: 0;
 }
 
 .month-button.active {
-    background-color: var(--accent-orange); /* Active month color */
+    background-color: var(--accent-orange);
     color: white;
     border-color: var(--accent-orange);
 }
 
 .month-button:hover:not(.active) {
-    background-color: #E0E0E0; /* Hover effect for inactive buttons */
+    background-color: #E0E0E0;
 }
 
 .transactions-header-row {
-    display: flex;
-    justify-content: space-between; /* Pushes H2 left, Button right */
+    display: flex; /* Use flexbox */
+    justify-content: space-between; /* Push items to ends */
     align-items: center;
     margin-top: 20px;
     margin-bottom: 10px;
-    padding: 0 20px; /* Add padding to align with main content */
+    padding: 0 20px;
 }
 
 .transactions-header-row h2 {
@@ -369,7 +375,7 @@ body {
 /* Transactions List */
 .transactions-list {
     margin-top: 10px;
-    padding: 0 20px; /* Add padding to align with main content */
+    padding: 0 20px;
 }
 
 .transaction-group {
@@ -407,12 +413,12 @@ body {
     flex-shrink: 0;
 }
 
-/* Category icon background colors (ensure these match mapCategoryAndIcon logic) */
-.transaction-category-icon.category-gain { background-color: #E8F5E9; /* Light green */ }
-.transaction-category-icon.category-food { background-color: #FFF3E0; /* Light orange */ }
-.transaction-category-icon.category-medicines { background-color: #FFEBEE; /* Light red */ }
-.transaction-category-icon.category-shopping { background-color: #E3F2FD; /* Light blue */ }
-.transaction-category-icon.category-misc { background-color: #EDE7F6; /* Light purple for misc expenses */ }
+/* Category icon background colors */
+.transaction-category-icon.category-gain { background-color: #E8F5E9; }
+.transaction-category-icon.category-food { background-color: #FFF3E0; }
+.transaction-category-icon.category-medicines { background-color: #FFEBEE; }
+.transaction-category-icon.category-shopping { background-color: #E3F2FD; }
+.transaction-category-icon.category-misc { background-color: #EDE7F6; }
 
 
 .transaction-details {
@@ -440,11 +446,11 @@ body {
 }
 
 .transaction-amount.expense {
-    color: var(--accent-red); /* Red for expenses */
+    color: var(--accent-red);
 }
 
 .transaction-amount.gain {
-    color: var(--accent-green); /* Green for gains */
+    color: var(--accent-green);
 }
 
 /* Floating Action Button */
