@@ -1,8 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const CSV_URL = 'https://docs.google.com/sheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv';
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv';
+    // ADDED: GOOGLE_FORM_URL was missing from your provided code
     const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UE-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header'; // Ensure this is your correct form URL
 
-    let allFetchedData = []; // To store all data once fetched
+    let allFetchedData = []; // To store all data once fetched (used by both dashboard and transactions)
 
     function parseCSV(csv) {
         const lines = csv.split('\n').filter(line => line.trim() !== '');
@@ -13,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (let i = 1; i < lines.length; i++) {
             const values = lines[i].split(',').map(value => value.trim());
-            // Basic validation: ensure number of values matches headers
             if (values.length !== headers.length) {
                 console.warn('CSV Parse Warning: Skipping malformed row (column mismatch):', lines[i]);
                 continue;
@@ -32,11 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isNaN(numAmount)) {
             return '₱ 0.00';
         }
-        // Format to Philippine Peso
         return `₱ ${numAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
-    // Function to map category and get icon
     function mapCategoryAndIcon(type, whatKind) {
         let category = 'Misc';
         let icon = '✨';
@@ -56,9 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'food': case 'groceries': category = 'Food'; icon = '🍔'; break;
                 case 'medicines': category = 'Medicines'; icon = '💊'; break;
                 case 'online shopping': category = 'Shopping'; icon = '🛍️'; break;
-                case 'transportation': icon = '🚌'; break;
-                case 'utility bills': icon = '💡'; break;
-                case 'allowance': category = 'Misc'; icon = '🚶'; break; // Changed to Misc
+                case 'transportation': category = 'Transportation'; icon = '🚌'; break;
+                case 'utility bills': category = 'Utility Bills'; icon = '💡'; break;
+                case 'allowance': category = 'Misc'; icon = '🚶'; break;
                 default: category = 'Misc'; icon = '✨'; break;
             }
         }
@@ -67,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Dashboard Specific Logic (index.html) ---
     async function updateDashboard() {
-        if (!document.getElementById('dashboard-page')) return; // Only run if on dashboard page
+        if (!document.getElementById('dashboard-page')) return;
 
         // Fetch data if not already fetched
         if (allFetchedData.length === 0) {
@@ -91,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
         allFetchedData.forEach(entry => {
             const amount = parseFloat(entry.Amount);
             const entryType = entry.Type ? entry.Type.toLowerCase() : '';
-            const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : '';
+            const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : ''; // Corrected property name
 
             if (isNaN(amount) || !entryType || !entryWhatKind) {
                 console.warn('Dashboard - Skipping malformed entry:', entry);
@@ -129,21 +127,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const displayPercentage = isNaN(remainingBalancePercentage) ? 0 : Math.round(remainingBalancePercentage);
         document.getElementById('remainingBalancePct').textContent = `${displayPercentage}%`;
 
-        // Update progress ring
         let progressOffset = 0;
-        let progressColor = 'var(--accent-green)'; // Default to green
-        const radius = 34; // Radius of the circle
+        let progressColor = 'var(--accent-green)';
+        const radius = 34;
         const circumference = 2 * Math.PI * radius;
 
         if (displayPercentage >= 100) {
-            progressOffset = 0; // Fully green
+            progressOffset = 0;
         } else if (displayPercentage > 0) {
             progressOffset = circumference - (displayPercentage / 100) * circumference;
             if (displayPercentage < 25) {
-                progressColor = 'var(--accent-orange)'; // Orange if below 25%
+                progressColor = 'var(--accent-orange)';
             }
-        } else { // 0 or negative percentage
-            progressOffset = circumference; // Fully red
+        } else {
+            progressOffset = circumference;
             progressColor = 'var(--accent-red)';
         }
 
@@ -154,7 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
             progressCircle.style.stroke = progressColor;
         }
 
-        // Update category percentages and chart
         const categoryNames = ['Food', 'Medicines', 'Shopping', 'Misc'];
         const categoryAmounts = [
             expenseCategoriesForChart.Food,
@@ -170,10 +166,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('miscPct').textContent = `${totalCategoryExpenseForChart > 0 ? Math.round((expenseCategoriesForChart.Misc / totalCategoryExpenseForChart) * 100) : 0}%`;
 
 
-        // Chart.js (Doughnut Chart)
         const ctx = document.getElementById('expenseChart');
         if (ctx) {
-            // Destroy existing chart instance if it exists to prevent overlap
             if (window.expenseChartInstance) {
                 window.expenseChartInstance.destroy();
             }
@@ -190,24 +184,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     datasets: [{
                         data: categoryAmounts,
                         backgroundColor: chartColors,
-                        borderColor: 'var(--card-bg)', // Match card background
+                        borderColor: 'var(--card-bg)',
                         borderWidth: 4,
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    cutout: '80%', // Makes it a doughnut
+                    cutout: '80%',
                     plugins: {
-                        legend: { display: false }, // Hide legend as percentages are shown in HTML
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
                                     let label = context.label || '';
                                     if (label) { label += ': '; }
-                                    if (context.parsed !== null) {
-                                        label += formatCurrency(context.parsed);
-                                    }
+                                    if (context.parsed !== null) { label += formatCurrency(context.parsed); }
                                     return label;
                                 }
                             }
@@ -219,18 +211,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Transactions Page Specific Logic (transactions.html) ---
+    // Renamed allTransactionsData to allFetchedData as it's the same data source now
+    // let allTransactionsData = []; // Store all fetched data for consistent filtering
 
-    // Function to fetch data and process for transactions page
     async function fetchAndProcessTransactions() {
         if (!document.getElementById('transactions-page')) return; // Only run if on transactions page
 
         try {
             const response = await fetch(CSV_URL);
             const csv = await response.text();
-            allFetchedData = parseCSV(csv); // Populate global data store
-            console.log("Transactions data fetched successfully. Entries:", allFetchedData.length); // Debugging
+            allFetchedData = parseCSV(csv); // Store raw data in the shared variable
 
-            // Initialize category filter after data is fetched
+            // Populate category filter dropdown
             populateCategoryFilter();
 
             // Set current month active and update profile date display
@@ -242,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (parseInt(button.dataset.month) === currentMonth) {
                     button.classList.add('active');
                 } else {
-                    button.classList.remove('active'); // Ensure only current month is active
+                    button.classList.remove('active');
                 }
             });
 
@@ -253,14 +245,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileDateDisplay.innerHTML = `<span>${monthName}</span><span>${dayOfMonth}</span>`;
             }
 
-            // IMPORTANT: Initial render of transactions for the current month is NOT done here on page load.
-            // It will be triggered by a month button click. This matches the behavior you wanted to revert to.
+            // Initial render of transactions for the current month.
+            // This is the point where the transactions page will load data on reload.
+            renderTransactions(currentMonth);
 
         } catch (error) {
-            console.error('Error fetching or processing transactions data:', error);
+            console.error('Error fetching or processing CSV for transactions:', error);
             const transactionsListDiv = document.getElementById('transactionsList');
             if (transactionsListDiv) {
-                transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--accent-red); padding: 2rem;">Error loading transactions. Please try again later.</p>';
+                transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--accent-red); padding: 2rem;">Error loading transactions. Please check the data source.</p>';
             }
         }
     }
@@ -269,20 +262,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const categoryFilterDropdown = document.getElementById('categoryFilterDropdown');
         if (!categoryFilterDropdown) return;
 
-        categoryFilterDropdown.innerHTML = '<option value="">All Categories</option>'; // Default option
+        categoryFilterDropdown.innerHTML = '<option value="">All Categories</option>';
 
         const uniqueCategories = new Set();
-        allFetchedData.forEach(entry => {
+        allFetchedData.forEach(entry => { // Use allFetchedData here
             if (entry['What kind?']) {
                 uniqueCategories.add(entry['What kind?'].trim());
             }
+            // Explicitly add "Salary" and "Allowance" if they are specific gain types
+            if (entry.Type && entry.Type.toLowerCase() === 'gains' && entry['What kind?'].trim() === 'Salary') {
+                uniqueCategories.add('Salary');
+            }
+            if (entry.Type && entry.Type.toLowerCase() === 'gains' && entry['What kind?'].trim() === 'Allowance') {
+                uniqueCategories.add('Allowance');
+            }
         });
 
-        // Convert Set to Array and sort alphabetically
         const sortedCategories = Array.from(uniqueCategories).sort();
-
-        // Custom order: Gains, Expenses, then sorted specific categories
         const finalCategories = [];
+
+        // Add "Gains" and "Expenses" at the top if relevant
         const hasGains = allFetchedData.some(entry => entry.Type && entry.Type.toLowerCase() === 'gains');
         const hasExpenses = allFetchedData.some(entry => entry.Type && entry.Type.toLowerCase() === 'expenses');
 
@@ -291,13 +290,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         sortedCategories.forEach(cat => {
             const lowerCat = cat.toLowerCase();
-            if (lowerCat !== 'gains' && lowerCat !== 'expenses' && !finalCategories.includes(cat)) {
+            // Avoid adding "Gains" or "Expenses" or specific gain types like "Salary" or "Allowance" again if they are already handled as top-level filters.
+            if (lowerCat !== 'gains' && lowerCat !== 'expenses' && lowerCat !== 'salary' && lowerCat !== 'allowance' && !finalCategories.includes(cat)) {
                 finalCategories.push(cat);
             }
         });
 
+        // Re-sort the final categories to put 'Gains' and 'Expenses' first, then others alphabetically
+        finalCategories.sort((a, b) => {
+            if (a === 'Gains') return -1;
+            if (b === 'Gains') return 1;
+            if (a === 'Expenses') return -1;
+            if (b === 'Expenses') return 1;
+            return a.localeCompare(b);
+        });
+
+
         finalCategories.forEach(category => {
-            if (category) { // Ensure category is not empty string
+            if (category) {
                 const option = document.createElement('option');
                 option.value = category;
                 option.textContent = category;
@@ -306,26 +316,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function renderTransactions(selectedMonth = null, selectedCategory = '', startDate = null, endDate = null) {
+
+    function renderTransactions(selectedMonth, selectedCategory = '', startDate = null, endDate = null) {
         const transactionsListDiv = document.getElementById('transactionsList');
-        if (!transactionsListDiv || allFetchedData.length === 0) return; // Ensure data is present
+        if (!transactionsListDiv) return;
 
-        let filteredData = allFetchedData.filter(entry => {
+        let filteredData = allFetchedData.filter(entry => { // Use allFetchedData here
             const amount = parseFloat(entry.Amount);
-            const date = new Date(entry.Date); // Ensure date is valid for filtering
+            const date = new Date(entry.Date);
             const entryType = entry.Type ? entry.Type.toLowerCase() : '';
-            const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : '';
+            const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : ''; // Corrected property name
 
-            if (isNaN(amount) || isNaN(date.getTime()) || !entryType) {
+            if (isNaN(amount) || isNaN(date.getTime()) || !entryType) { // Use .getTime() for valid date check
                 console.warn('Skipping malformed entry:', entry);
                 return false;
             }
 
             const entryDate = new Date(entry.Date);
-            entryDate.setHours(0, 0, 0, 0); // Normalize to start of day for comparison
+            entryDate.setHours(0, 0, 0, 0);
 
-            // Month filtering (applied only if no custom dates are selected)
-            if (selectedMonth !== null && !(startDate || endDate)) {
+            // Month filtering (always apply if a month is specified, UNLESS custom dates are present)
+            if (selectedMonth !== null && !(startDate || endDate)) { // Only apply month filter if no custom dates
                 if (entryDate.getMonth() + 1 !== selectedMonth) {
                     return false;
                 }
@@ -349,22 +360,21 @@ document.addEventListener('DOMContentLoaded', () => {
             // Date range filtering
             if (startDate && endDate) {
                 const start = new Date(startDate);
-                start.setHours(0, 0, 0, 0); // Normalize to start of day
+                start.setHours(0, 0, 0, 0);
                 const end = new Date(endDate);
-                end.setHours(23, 59, 59, 999); // Normalize to end of day
+                end.setHours(23, 59, 59, 999);
 
                 if (entryDate < start || entryDate > end) {
                     return false;
                 }
             }
 
-            return true; // Keep the entry if all filters pass
+            return true;
         });
 
-        // Sort by date descending (most recent first)
-        filteredData.sort((a, b) => new Date(b.Date) - new Date(a.Date));
+        filteredData.sort((a, b) => new Date(b.Date) - new Date(a.Date)); // Sort by date descending
 
-        transactionsListDiv.innerHTML = ''; // Clear previous entries
+        transactionsListDiv.innerHTML = '';
 
         const groupedTransactions = {};
         const today = new Date();
@@ -393,17 +403,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const sortedDates = Object.keys(groupedTransactions).sort((a, b) => {
-            if (a === 'Today') return -1; // Today first
+            if (a === 'Today') return -1;
             if (b === 'Today') return 1;
-            if (a === 'Yesterday') return -1; // Yesterday second
+            if (a === 'Yesterday') return -1;
             if (b === 'Yesterday') return 1;
             const dateA = new Date(a);
             const dateB = new Date(b);
-            // Fallback for string dates if conversion fails (though should be consistent)
-            if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
-                return dateB - dateA; // Sort actual dates descending
+            if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) { // Use .getTime() for valid date check
+                return dateB - dateA;
             }
-            return 0; // Maintain original order if date parsing fails for some reason
+            return 0;
         });
 
         sortedDates.forEach(dateHeader => {
@@ -415,15 +424,13 @@ document.addEventListener('DOMContentLoaded', () => {
             headerDiv.textContent = dateHeader;
             groupDiv.appendChild(headerDiv);
 
-            // Sort transactions within each group by time (ascending)
             groupedTransactions[dateHeader].sort((a, b) => {
                 const timeA = a.Time ? a.Time.split(':').map(Number) : [0, 0, 0];
                 const timeB = b.Time ? b.Time.split(':').map(Number) : [0, 0, 0];
                 if (timeA[0] !== timeB[0]) return timeA[0] - timeB[0];
                 if (timeA[1] !== timeB[1]) return timeA[1] - timeB[1];
-                return timeA[2] - timeB[2]; // Compare seconds as well
+                return timeA[2] - timeB[2];
             });
-
 
             groupedTransactions[dateHeader].forEach(entry => {
                 const itemDiv = document.createElement('div');
@@ -432,11 +439,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const categoryIconDiv = document.createElement('div');
                 categoryIconDiv.classList.add('transaction-category-icon');
 
-                const { category: mappedCategory, icon: categoryIcon } = mapCategoryAndIcon(entry.Type, entry['What kind?']);
+                const { category: mappedCategory, icon: categoryIcon } = mapCategoryAndIcon(entry.Type, entry['What kind?']); // Corrected property name
 
                 if (entry.Type && entry.Type.toLowerCase() === 'gains') {
                      categoryIconDiv.classList.add('category-gain');
-                } else { // For expenses, add specific color classes
+                } else {
                     switch (mappedCategory.toLowerCase()) {
                         case 'food': categoryIconDiv.classList.add('category-food'); break;
                         case 'medicines': categoryIconDiv.classList.add('category-medicines'); break;
@@ -453,11 +460,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const nameSpan = document.createElement('span');
                 nameSpan.classList.add('transaction-name');
-                nameSpan.textContent = entry.Description && entry.Description.trim() !== '' ? entry.Description : (entry['What kind?'] && entry['What kind?'].trim() !== '' ? entry['What kind?'] : 'N/A');
+                nameSpan.textContent = entry.Description && entry.Description.trim() !== '' ? entry.Description : (entry['What kind?'] && entry['What kind?'].trim() !== '' ? entry['What kind?'] : 'N/A'); // Corrected property name
                 detailsDiv.appendChild(nameSpan);
 
                 const timeSpan = document.createElement('span');
                 timeSpan.classList.add('transaction-time');
+                // Format time to AM/PM if needed, assuming entry.Time is 'HH:MM:SS' or 'HH:MM'
                 if (entry.Time) {
                     try {
                         const [hours, minutes, seconds] = entry.Time.split(':').map(Number);
@@ -494,10 +502,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
     // --- Common Logic & Event Listeners ---
 
-    // FAB Button for adding transactions
     const fabButton = document.querySelector('.fab-button');
     if (fabButton) {
         fabButton.addEventListener('click', () => {
@@ -505,37 +511,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Initialize functions based on the current page
     if (document.getElementById('dashboard-page')) {
-        updateDashboard(); // Initial dashboard load (all time)
-        // No dashboard filter listeners here as they are being removed
+        updateDashboard();
     } else if (document.getElementById('transactions-page')) {
-        fetchAndProcessTransactions(); // Fetch and process for transactions page
+        // Transactions page initialization and event listeners moved inside here
+        const today = new Date();
+        let currentMonth = today.getMonth() + 1; // Default to current month
 
-        let currentMonth; // Declare outside to be accessible
-
-        const monthButtons = document.querySelectorAll('.month-button');
-
-        // Event listeners for month buttons
-        monthButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                // Remove 'active' class from all buttons
-                monthButtons.forEach(btn => btn.classList.remove('active'));
-                // Add 'active' class to the clicked button
-                this.classList.add('active');
-                currentMonth = parseInt(this.dataset.month); // Get the month number from data-month attribute
-
-                // Clear any custom date range filters when a month is selected
-                document.getElementById('startDateInput').value = '';
-                document.getElementById('endDateInput').value = '';
-                document.getElementById('categoryFilterDropdown').value = ''; // Clear category filter as well
-
-                renderTransactions(currentMonth); // Render transactions for the selected month
-                document.getElementById('filterOptionsContainer').style.display = 'none'; // Hide filters after month selection
-            });
-        });
-
-        // Filter button functionality for transactions page
         const filterButton = document.getElementById('filterButton');
         const filterOptionsContainer = document.getElementById('filterOptionsContainer');
         const categoryFilterDropdown = document.getElementById('categoryFilterDropdown');
@@ -543,48 +525,87 @@ document.addEventListener('DOMContentLoaded', () => {
         const endDateInput = document.getElementById('endDateInput');
         const applyFiltersButton = document.getElementById('applyFiltersButton');
         const clearFiltersButton = document.getElementById('clearFiltersButton');
+        const monthButtons = document.querySelectorAll('.month-button'); // Also defined here
 
+        // Event listener for main Filter button (toggle visibility)
         if (filterButton) {
             filterButton.addEventListener('click', () => {
                 filterOptionsContainer.style.display = filterOptionsContainer.style.display === 'flex' ? 'none' : 'flex';
             });
         }
 
+        // Apply Filters button click
         if (applyFiltersButton) {
             applyFiltersButton.addEventListener('click', () => {
                 const selectedCategory = categoryFilterDropdown.value;
                 const startDate = startDateInput.value;
                 const endDate = endDateInput.value;
 
-                // Determine which month is active if no custom dates are set
+                // Get the currently active month button's month value
                 const activeMonthButton = document.querySelector('.month-button.active');
-                const selectedMonthFromButton = activeMonthButton ? parseInt(activeMonthButton.dataset.month) : null;
+                currentMonth = activeMonthButton ? parseInt(activeMonthButton.dataset.month) : null;
 
-                // If custom dates are selected, the month filter is ignored
-                const finalMonthFilter = (startDate || endDate) ? null : selectedMonthFromButton;
+                // If custom dates are selected, override month filter
+                const finalMonth = (startDate || endDate) ? null : currentMonth;
 
-                renderTransactions(finalMonthFilter, selectedCategory, startDate, endDate);
+                renderTransactions(finalMonth, selectedCategory, startDate, endDate);
                 filterOptionsContainer.style.display = 'none'; // Hide filters after applying
             });
         }
 
+        // Clear Filters button click
         if (clearFiltersButton) {
             clearFiltersButton.addEventListener('click', () => {
-                categoryFilterDropdown.value = ''; // Reset category
-                startDateInput.value = ''; // Clear start date
-                endDateInput.value = ''; // Clear end date
+                categoryFilterDropdown.value = '';
+                startDateInput.value = '';
+                endDateInput.value = '';
 
-                // Re-activate current month button and re-render for current month
+                // Re-activate current month button and re-render
                 const today = new Date();
-                const currentMonth = today.getMonth() + 1;
+                currentMonth = today.getMonth() + 1;
                 monthButtons.forEach(btn => btn.classList.remove('active'));
                 const currentMonthBtn = document.querySelector(`.month-button[data-month="${currentMonth}"]`);
                 if (currentMonthBtn) {
                     currentMonthBtn.classList.add('active');
                 }
-                renderTransactions(currentMonth); // Re-render for the current month
-                filterOptionsContainer.style.display = 'none'; // Hide filters after clearing
+                renderTransactions(currentMonth); // Render with only current month filter
+                filterOptionsContainer.style.display = 'none'; // Hide filters
             });
         }
+
+        // Set initial active month button (on page load for transactions)
+        monthButtons.forEach(button => {
+            if (parseInt(button.dataset.month) === currentMonth) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active'); // Ensure only current month is active on load
+            }
+        });
+
+        // Set date in profile icon on transactions page
+        const profileDateDisplay = document.getElementById('profileDateDisplay');
+        if (profileDateDisplay) {
+            const monthName = today.toLocaleDateString('en-US', { month: 'short' });
+            const dayOfMonth = today.getDate();
+            profileDateDisplay.innerHTML = `<span>${monthName}</span><span>${dayOfMonth}</span>`;
+        }
+
+        // Add event listeners for month buttons
+        monthButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                monthButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                currentMonth = parseInt(this.dataset.month); // Update currentMonth
+                // Clear custom date filters when a month is selected
+                startDateInput.value = '';
+                endDateInput.value = '';
+                categoryFilterDropdown.value = ''; // Clear category filter too
+                renderTransactions(currentMonth);
+                filterOptionsContainer.style.display = 'none'; // Hide filters after month selection
+            });
+        });
+
+        // Initial data fetch and render for transactions page
+        fetchAndProcessTransactions();
     }
 });
