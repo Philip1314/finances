@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv';
+    const CSV_URL = 'https://docs.google.com/sheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv';
     const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header';
 
     function parseCSV(csv) {
@@ -477,6 +477,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (document.getElementById('dashboard-page')) {
+        const dashboardFilterToggle = document.getElementById('dashboardFilterToggle');
+        const dashboardFilterCard = document.getElementById('dashboardFilterCard');
         const dashboardStartDateInput = document.getElementById('dashboardStartDateInput');
         const dashboardEndDateInput = document.getElementById('dashboardEndDateInput');
         const applyDashboardFiltersButton = document.getElementById('applyDashboardFiltersButton');
@@ -485,12 +487,20 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initial load of dashboard
         updateDashboard();
 
+        // Event listener for toggling dashboard filters
+        if (dashboardFilterToggle) {
+            dashboardFilterToggle.addEventListener('click', () => {
+                dashboardFilterCard.classList.toggle('show');
+            });
+        }
+
         // Event listener for applying dashboard filters
         if (applyDashboardFiltersButton) {
             applyDashboardFiltersButton.addEventListener('click', () => {
                 const startDate = dashboardStartDateInput.value;
                 const endDate = dashboardEndDateInput.value;
                 updateDashboard(startDate, endDate); // Call updateDashboard with filters
+                dashboardFilterCard.classList.remove('show'); // Hide filters after applying
             });
         }
 
@@ -500,6 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dashboardStartDateInput.value = '';
                 dashboardEndDateInput.value = '';
                 updateDashboard(); // Call updateDashboard without filters to show all data
+                dashboardFilterCard.classList.remove('show'); // Hide filters after clearing
             });
         }
 
