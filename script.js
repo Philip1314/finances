@@ -1,18 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Configuration ---
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv';
     const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header';
 
-    let allFetchedData = []; // To store all data once fetched for both dashboard and transactions
+    let allFetchedData = []; // Stores all data once fetched
 
+    // --- Utility Functions ---
+
+    /**
+     * Parses CSV text into an array of objects.
+     * @param {string} csv - The CSV data as a string.
+     * @returns {Array<Object>} An array of objects, where each object represents a row.
+     */
     function parseCSV(csv) {
         const lines = csv.split('\n').filter(line => line.trim() !== '');
-        if (lines.length === 0) return [];
+        if (lines.length === 0) {
+            console.warn('CSV Parse Warning: No data lines found.');
+            return [];
+        }
 
         const headers = lines[0].split(',').map(header => header.trim());
         const data = [];
 
         for (let i = 1; i < lines.length; i++) {
             const values = lines[i].split(',').map(value => value.trim());
+            // Basic validation for malformed rows
             if (values.length !== headers.length) {
                 console.warn('CSV Parse Warning: Skipping malformed row (column mismatch):', lines[i]);
                 continue;
@@ -26,6 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
         return data;
     }
 
+    /**
+     * Formats a number as Philippine Peso currency.
+     * @param {number|string} amount - The amount to format.
+     * @returns {string} The formatted currency string (e.g., "₱ 1,234.56").
+     */
     function formatCurrency(amount) {
         const numAmount = parseFloat(amount);
         if (isNaN(numAmount)) {
@@ -34,43 +51,62 @@ document.addEventListener('DOMContentLoaded', () => {
         return `₱ ${numAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
 
+    /**
+     * Maps 'Type' and 'What kind?' from CSV to a display category and emoji icon.
+     * @param {string} type - The transaction type (e.g., 'Gains', 'Expenses').
+     * @param {string} whatKind - The specific kind/category (e.g., 'Food', 'Salary').
+     * @returns {{category: string, icon: string}} An object with the mapped category name and its icon.
+     */
     function mapCategoryAndIcon(type, whatKind) {
         let category = 'Misc';
-        let icon = '✨';
+        let icon = '✨'; // Default icon
 
         const lowerCaseWhatKind = whatKind ? whatKind.toLowerCase() : '';
         const lowerCaseType = type ? type.toLowerCase() : '';
 
         if (lowerCaseType === 'gains') {
-            category = 'Gain';
+            category = 'Gain'; // A general category for gains
             switch (lowerCaseWhatKind) {
                 case 'salary': icon = '💸'; break;
                 case 'allowance': icon = '🎁'; break;
+                // Add more specific gain types here if needed
                 default: icon = '💰'; break;
             }
         } else if (lowerCaseType === 'expenses') {
             switch (lowerCaseWhatKind) {
-                case 'food': case 'groceries': category = 'Food'; icon = '🍔'; break;
+                case 'food':
+                case 'groceries':
+                    category = 'Food'; icon = '🍔'; break;
                 case 'medicines': category = 'Medicines'; icon = '💊'; break;
                 case 'online shopping': category = 'Shopping'; icon = '🛍️'; break;
                 case 'transportation': category = 'Transportation'; icon = '🚌'; break;
                 case 'utility bills': category = 'Utility Bills'; icon = '💡'; break;
+                // 'Allowance' can also be an expense, map it to Misc if it's an expense
                 case 'allowance': category = 'Misc'; icon = '🚶'; break;
+                // Add more expense types here if needed
                 default: category = 'Misc'; icon = '✨'; break;
             }
         }
         return { category, icon };
     }
 
-    // Function to fetch data (now shared)
+    /**
+     * Fetches CSV data from the configured URL. Caches data after first fetch.
+     * @returns {Promise<Array<Object>>} A promise that resolves with the parsed CSV data.
+     */
     async function fetchData() {
         if (allFetchedData.length === 0) { // Only fetch if data isn't already loaded
             try {
                 const response = await fetch(CSV_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const csv = await response.text();
                 allFetchedData = parseCSV(csv);
+                // console.log('Data fetched and parsed successfully:', allFetchedData); // For debugging
             } catch (error) {
                 console.error('Error fetching CSV data:', error);
+                alert('Failed to load data. Please check your internet connection or the Google Sheet URL.');
                 throw new Error('Failed to load data.'); // Propagate error
             }
         }
@@ -78,162 +114,199 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Dashboard Specific Logic (index.html) ---
-    // Modified updateDashboard to accept date filters
-    async function updateDashboard(startDate = null, endDate = null) {
-        if (!document.getElementById('dashboard-page')) return;
+
+    /**
+     * Populates the dashboard year filter dropdown with unique years from the fetched data.
+     */
+    function populateDashboardYearFilter() {
+        const dashboardYearFilter = document.getElementById('dashboardYearFilter');
+        if (!dashboardYearFilter) return;
+
+        // Clear existing options except "All Years"
+        dashboardYearFilter.innerHTML = '<option value="">All Years</option>';
+
+        const uniqueYears = new Set();
+        allFetchedData.forEach(entry => {
+            const date = new Date(entry.Date);
+            if (!isNaN(date.getTime())) { // Ensure the date is valid
+                uniqueYears.add(date.getFullYear());
+            }
+        });
+
+        // Add unique years to the dropdown, sorted in descending order
+        Array.from(uniqueYears).sort((a, b) => b - a).forEach(year => {
+            const option = document.createElement('option');
+            option.value = year;
+            option.textContent = year;
+            dashboardYearFilter.appendChild(option);
+        });
+    }
+
+    /**
+     * Updates the dashboard with filtered data, calculates totals, and renders the chart.
+     * @param {string|null} selectedMonth - The month to filter by (1-12), or null/empty for all months.
+     * @param {string|null} selectedYear - The year to filter by, or null/empty for all years.
+     */
+    async function updateDashboard(selectedMonth = null, selectedYear = null) {
+        if (!document.getElementById('dashboard-page')) return; // Ensure we are on the dashboard page
 
         try {
             const data = await fetchData(); // Get already fetched data or fetch it
 
-            let filteredDashboardData = data.filter(entry => {
+            // Filter data based on selected month and year
+            const filteredDashboardData = data.filter(entry => {
                 const entryDate = new Date(entry.Date);
-                entryDate.setHours(0, 0, 0, 0);
 
                 if (isNaN(entryDate.getTime())) {
-                    console.warn('Dashboard Filter Warning: Skipping entry with invalid date:', entry);
-                    return false;
+                    return false; // Skip entries with invalid dates
                 }
 
-                let inDateRange = true;
-                if (startDate && endDate) {
-                    const start = new Date(startDate);
-                    start.setHours(0, 0, 0, 0);
-                    const end = new Date(endDate);
-                    end.setHours(23, 59, 59, 999); // End of the day for inclusive range
-
-                    inDateRange = (entryDate >= start && entryDate <= end);
-                } else if (startDate) { // Only start date provided
-                    const start = new Date(startDate);
-                    start.setHours(0, 0, 0, 0);
-                    inDateRange = (entryDate >= start);
-                } else if (endDate) { // Only end date provided
-                    const end = new Date(endDate);
-                    end.setHours(23, 59, 59, 999);
-                    inDateRange = (entryDate <= end);
+                let matchMonth = true;
+                if (selectedMonth && selectedMonth !== '') {
+                    matchMonth = (entryDate.getMonth() + 1) === parseInt(selectedMonth);
                 }
 
-                return inDateRange;
+                let matchYear = true;
+                if (selectedYear && selectedYear !== '') {
+                    matchYear = entryDate.getFullYear() === parseInt(selectedYear);
+                }
+
+                return matchMonth && matchYear;
             });
-
 
             let totalExpensesAmount = 0;
             let totalGainsAmount = 0;
 
-            const expenseCategoriesForChart = { Food: 0, Medicines: 0, Shopping: 0, Misc: 0, Transportation: 0, 'Utility Bills': 0 };
-            // Populate all possible expense categories from mapCategoryAndIcon
-            data.forEach(entry => {
-                if (entry.Type && entry.Type.toLowerCase() === 'expenses') {
-                    const { category } = mapCategoryAndIcon(entry.Type, entry['What kind?']);
-                    if (expenseCategoriesForChart[category] === undefined) {
-                        expenseCategoriesForChart[category] = 0;
-                    }
-                }
+            const expenseCategoriesForChart = {};
+            // Initialize chart categories to 0 for consistent display, even if no data
+            ['Food', 'Medicines', 'Shopping', 'Transportation', 'Utility Bills', 'Misc'].forEach(cat => {
+                expenseCategoriesForChart[cat] = 0;
             });
 
-
+            // Calculate totals and categorize expenses for the chart
             filteredDashboardData.forEach(entry => {
                 const amount = parseFloat(entry.Amount);
                 const entryType = entry.Type ? entry.Type.toLowerCase() : '';
-                const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : '';
 
-                if (isNaN(amount) || !entryType) { // Removed !entryWhatKind check here as Misc handles it
-                    console.warn('Dashboard - Skipping malformed entry:', entry);
-                    return;
+                if (isNaN(amount) || !entryType) {
+                    return; // Skip malformed entries
                 }
 
                 if (entryType === 'expenses') {
                     totalExpensesAmount += amount;
                     const { category } = mapCategoryAndIcon(entry.Type, entry['What kind?']);
-                    if (expenseCategoriesForChart[category] !== undefined) {
+                    // Assign to correct category or 'Misc' if not explicitly handled
+                    if (expenseCategoriesForChart.hasOwnProperty(category)) {
                         expenseCategoriesForChart[category] += amount;
                     } else {
-                        expenseCategoriesForChart.Misc += amount; // Fallback to Misc if category not explicitly handled
+                        expenseCategoriesForChart.Misc += amount; // Fallback for new/unmapped categories
                     }
                 } else if (entryType === 'gains') {
                     totalGainsAmount += amount;
                 }
             });
 
-            // Update display elements
-            document.getElementById('netExpenseValue').textContent = formatCurrency(totalExpensesAmount); // Now shows filtered expenses
+            // --- Update UI Elements on Dashboard ---
 
+            // Net Expense Value
+            const netExpenseValueElement = document.getElementById('netExpenseValue');
+            if (netExpenseValueElement) {
+                netExpenseValueElement.textContent = formatCurrency(totalExpensesAmount);
+            }
+
+            // Remaining Balance
             const remainingBalance = totalGainsAmount - totalExpensesAmount;
-            const totalIncomeOrBudget = totalGainsAmount;
+            const totalIncomeOrBudget = totalGainsAmount; // Assuming gains as the budget
+            const remainingBalanceAmountElement = document.getElementById('remainingBalanceAmount');
+            if (remainingBalanceAmountElement) {
+                remainingBalanceAmountElement.textContent = `${formatCurrency(remainingBalance)} of ${formatCurrency(totalIncomeOrBudget)}`;
+            }
 
-            document.getElementById('remainingBalanceAmount').textContent = `${formatCurrency(remainingBalance)} of ${formatCurrency(totalIncomeOrBudget)}`;
-
+            // Remaining Balance Percentage & Progress Circle
             let remainingBalancePercentage = 0;
             if (totalIncomeOrBudget > 0) {
                 remainingBalancePercentage = (remainingBalance / totalIncomeOrBudget) * 100;
             }
             const displayPercentage = isNaN(remainingBalancePercentage) ? 0 : Math.round(remainingBalancePercentage);
-            document.getElementById('remainingBalancePct').textContent = `${displayPercentage}%`;
-
-            // Update progress circle
-            let progressOffset = 0;
-            let progressColor = 'var(--accent-green)';
-            const radius = 34;
-            const circumference = 2 * Math.PI * radius;
-
-            if (displayPercentage >= 100) {
-                progressOffset = 0;
-            } else if (displayPercentage > 0) {
-                progressOffset = circumference - (displayPercentage / 100) * circumference;
-                if (displayPercentage < 25) {
-                    progressColor = 'var(--accent-orange)';
-                }
-            } else {
-                progressOffset = circumference;
-                progressColor = 'var(--accent-red)';
+            const remainingBalancePctElement = document.getElementById('remainingBalancePct');
+            if (remainingBalancePctElement) {
+                remainingBalancePctElement.textContent = `${displayPercentage}%`;
             }
 
+            // Progress circle animation
             const progressCircle = document.querySelector('.progress-ring-progress');
             if (progressCircle) {
+                const radius = 34;
+                const circumference = 2 * Math.PI * radius;
                 progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+
+                let progressOffset;
+                let progressColor;
+
+                if (displayPercentage >= 100) {
+                    progressOffset = 0; // Full circle
+                    progressColor = 'var(--accent-green)';
+                } else if (displayPercentage > 0) {
+                    progressOffset = circumference - (displayPercentage / 100) * circumference;
+                    if (displayPercentage < 25) { // Warning color for low remaining balance
+                        progressColor = 'var(--accent-orange)';
+                    } else {
+                        progressColor = 'var(--accent-green)';
+                    }
+                } else { // 0 or negative percentage (over budget)
+                    progressOffset = circumference; // Circle fully visible
+                    progressColor = 'var(--accent-red)';
+                }
                 progressCircle.style.strokeDashoffset = progressOffset;
                 progressCircle.style.stroke = progressColor;
             }
 
-            // Update category percentages for dashboard
-            const sortedExpenseCategories = Object.keys(expenseCategoriesForChart).sort();
-            const categoryAmounts = sortedExpenseCategories.map(cat => expenseCategoriesForChart[cat]);
-            const totalCategoryExpenseForChart = categoryAmounts.reduce((sum, amount) => sum + amount, 0);
+            // Update category percentages in the legend
+            const htmlLegendCategories = ['food', 'medicines', 'shopping', 'misc']; // IDs in your HTML legend
 
-            // Dynamically update category percentages based on available IDs
-            document.querySelectorAll('[id$="Pct"]').forEach(element => {
-                const categoryId = element.id.replace('Pct', '');
-                const amount = expenseCategoriesForChart[categoryId];
-                if (amount !== undefined) {
+            const totalCategoryExpenseForChart = Object.values(expenseCategoriesForChart).reduce((sum, amount) => sum + amount, 0);
+
+            htmlLegendCategories.forEach(catId => {
+                const element = document.getElementById(`${catId}Pct`);
+                if (element) {
+                    // Convert 'food' to 'Food' for lookup in expenseCategoriesForChart
+                    const categoryName = catId.charAt(0).toUpperCase() + catId.slice(1);
+                    const amount = expenseCategoriesForChart[categoryName] || 0;
                     element.textContent = `${totalCategoryExpenseForChart > 0 ? Math.round((amount / totalCategoryExpenseForChart) * 100) : 0}%`;
                 }
             });
 
-
-            // Update the chart
+            // Update the Chart.js doughnut chart
             const ctx = document.getElementById('expenseChart');
             if (ctx) {
+                // Destroy previous chart instance to prevent memory leaks and redraw issues
                 if (window.expenseChartInstance) {
                     window.expenseChartInstance.destroy();
                 }
+
+                // Define chart colors (ensure these match your CSS variable colors if possible)
                 const chartColors = [
-                    getComputedStyle(document.documentElement).getPropertyValue('--accent-green').trim(),
-                    getComputedStyle(document.documentElement).getPropertyValue('--accent-red').trim(),
-                    getComputedStyle(document.documentElement).getPropertyValue('--accent-orange').trim(),
-                    getComputedStyle(document.documentElement).getPropertyValue('--accent-blue').trim(),
-                    // Add more colors if you expect more categories
-                    '#8a2be2', // BlueViolet
-                    '#ff4500'  // OrangeRed
+                    getComputedStyle(document.documentElement).getPropertyValue('--accent-green').trim(), // Example: Food
+                    getComputedStyle(document.documentElement).getPropertyValue('--accent-red').trim(),    // Example: Medicines
+                    getComputedStyle(document.documentElement).getPropertyValue('--accent-orange').trim(), // Example: Shopping
+                    getComputedStyle(document.documentElement).getPropertyValue('--accent-blue').trim(),   // Example: Misc
+                    '#8a2be2', // BlueViolet (e.g., Transportation)
+                    '#ff4500', // OrangeRed (e.g., Utility Bills)
+                    '#00ced1', // DarkTurquoise
+                    '#ffa500'  // Orange
                 ];
 
-                // Filter out categories with 0 amount for chart display if desired
                 const chartLabels = [];
                 const chartData = [];
-                let colorIndex = 0;
                 const activeChartColors = [];
+                let colorIndex = 0;
 
-                sortedExpenseCategories.forEach(category => {
-                    const amount = expenseCategoriesForChart[category];
-                    if (amount > 0) {
+                // Sort categories alphabetically for consistent chart slice order, then filter for non-zero amounts
+                const sortedChartCategories = Object.keys(expenseCategoriesForChart).sort();
+
+                sortedChartCategories.forEach(category => {
+                    const amount = expenseCategoriesForChart[category] || 0;
+                    if (amount > 0) { // Only add categories with actual expenses
                         chartLabels.push(category);
                         chartData.push(amount);
                         activeChartColors.push(chartColors[colorIndex % chartColors.length]);
@@ -241,6 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
 
+                // Create new chart instance
                 window.expenseChartInstance = new Chart(ctx.getContext('2d'), {
                     type: 'doughnut',
                     data: {
@@ -248,17 +322,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         datasets: [{
                             data: chartData,
                             backgroundColor: activeChartColors,
-                            borderColor: 'var(--card-bg)',
+                            borderColor: 'var(--card-bg)', // Border color around slices
                             borderWidth: 4,
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        cutout: '80%',
+                        cutout: '80%', // Makes it a doughnut chart
                         plugins: {
-                            legend: { display: false },
-                            tooltip: {
+                            legend: { display: false }, // Hide Chart.js built-in legend
+                            tooltip: { // Customize tooltips for currency
                                 callbacks: {
                                     label: function(context) {
                                         let label = context.label || '';
@@ -274,28 +348,53 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
         } catch (error) {
-            console.error('Error fetching or processing CSV for dashboard:', error);
-            if (document.getElementById('netExpenseValue')) document.getElementById('netExpenseValue').textContent = '₱ Error';
-            if (document.getElementById('remainingBalanceAmount')) document.getElementById('remainingBalanceAmount').textContent = '₱ Error';
+            console.error('Error during dashboard update:', error);
+            // Fallback UI for errors
+            const elementsToUpdate = ['netExpenseValue', 'remainingBalanceAmount', 'remainingBalancePct', 'foodPct', 'medicinesPct', 'shoppingPct', 'miscPct'];
+            elementsToUpdate.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (id.includes('Pct')) {
+                        el.textContent = '0%';
+                    } else if (id === 'remainingBalanceAmount') {
+                        el.textContent = '₱ Error of ₱ Error';
+                    } else {
+                        el.textContent = '₱ Error';
+                    }
+                }
+            });
+            // Clear or display error on chart canvas
+            if (window.expenseChartInstance) {
+                window.expenseChartInstance.destroy();
+            }
+            const canvas = document.getElementById('expenseChart');
+            if (canvas) {
+                const context = canvas.getContext('2d');
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.fillStyle = 'var(--accent-red)';
+                context.font = '14px "Inter", sans-serif';
+                context.textAlign = 'center';
+                context.fillText('Data Error', canvas.width / 2, canvas.height / 2);
+            }
         }
     }
 
     // --- Transactions Page Specific Logic (transactions.html) ---
-    // allTransactionsData is replaced by allFetchedData, so this global variable is no longer needed
-    // let allTransactionsData = [];
 
+    /**
+     * Fetches and processes transactions data for the transactions page.
+     */
     async function fetchAndProcessTransactions() {
-        if (!document.getElementById('transactions-page')) return;
+        if (!document.getElementById('transactions-page')) return; // Ensure we are on the transactions page
 
         try {
-            const data = await fetchData(); // Use the shared fetchData function
+            await fetchData(); // Fetch data (or use cached data)
 
-            // Populate category filter dropdown
-            populateCategoryFilter();
+            populateCategoryFilter(); // Populate category filter based on available data
 
-            // Set current month active and update profile date display
+            // Set current month as active and update profile date display
             const today = new Date();
-            const currentMonth = today.getMonth() + 1; // 1-indexed
+            const currentMonth = today.getMonth() + 1; // 1-indexed month
 
             const monthButtons = document.querySelectorAll('.month-button');
             monthButtons.forEach(button => {
@@ -313,17 +412,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileDateDisplay.innerHTML = `<span>${monthName}</span><span>${dayOfMonth}</span>`;
             }
 
-            renderTransactions(currentMonth);
+            renderTransactions(currentMonth); // Initial render for current month
 
         } catch (error) {
-            console.error('Error fetching or processing CSV for transactions:', error);
+            console.error('Error in fetchAndProcessTransactions:', error);
             const transactionsListDiv = document.getElementById('transactionsList');
             if (transactionsListDiv) {
-                transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--accent-red); padding: 2rem;">Error loading transactions. Please check the data source.</p>';
+                transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--accent-red); padding: 2rem;">Error loading transactions. Please check the data source and your network connection.</p>';
             }
         }
     }
 
+    /**
+     * Populates the category filter dropdown on the transactions page.
+     */
     function populateCategoryFilter() {
         const categoryFilterDropdown = document.getElementById('categoryFilterDropdown');
         if (!categoryFilterDropdown) return;
@@ -332,94 +434,87 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const uniqueCategories = new Set();
         allFetchedData.forEach(entry => {
-            if (entry['What kind?']) {
-                uniqueCategories.add(entry['What kind?'].trim());
-            }
-            if (entry.Type && entry.Type.toLowerCase() === 'gains' && entry['What kind?'].trim() === 'Salary') {
-                uniqueCategories.add('Salary');
-            }
-            if (entry.Type && entry.Type.toLowerCase() === 'gains' && entry['What kind?'].trim() === 'Allowance') {
-                uniqueCategories.add('Allowance');
+            if (entry['What kind?'] && entry['What kind?'].trim() !== '') {
+                uniqueCategories.add(entry['What kind'].trim());
             }
         });
 
-        const sortedCategories = Array.from(uniqueCategories).sort();
+        // Add 'Gains' and 'Expenses' type filters first if present in data
         const finalCategories = [];
-
         const hasGains = allFetchedData.some(entry => entry.Type && entry.Type.toLowerCase() === 'gains');
         const hasExpenses = allFetchedData.some(entry => entry.Type && entry.Type.toLowerCase() === 'expenses');
 
         if (hasGains) finalCategories.push('Gains');
         if (hasExpenses) finalCategories.push('Expenses');
 
-        sortedCategories.forEach(cat => {
+        // Add other unique 'What kind?' categories, sorted alphabetically
+        Array.from(uniqueCategories).sort().forEach(cat => {
             const lowerCat = cat.toLowerCase();
-            if (lowerCat !== 'gains' && lowerCat !== 'expenses' && lowerCat !== 'salary' && lowerCat !== 'allowance' && !finalCategories.includes(cat)) {
+            // Prevent adding 'gains' or 'expenses' again if they are already covered by the type filters
+            if (lowerCat !== 'gains' && lowerCat !== 'expenses' && !finalCategories.includes(cat)) {
                 finalCategories.push(cat);
             }
         });
 
-        finalCategories.sort((a, b) => {
-            if (a === 'Gains') return -1;
-            if (b === 'Gains') return 1;
-            if (a === 'Expenses') return -1;
-            if (b === 'Expenses') return 1;
-            return a.localeCompare(b);
-        });
-
         finalCategories.forEach(category => {
-            if (category) {
-                const option = document.createElement('option');
-                option.value = category;
-                option.textContent = category;
-                categoryFilterDropdown.appendChild(option);
-            }
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categoryFilterDropdown.appendChild(option);
         });
     }
 
+    /**
+     * Renders transactions on the transactions page based on applied filters.
+     * @param {number|null} selectedMonth - The month to filter by (1-12), or null if using date range.
+     * @param {string} selectedCategory - The category to filter by (e.g., 'Food', 'Gains'), or empty for all.
+     * @param {string|null} startDate - Start date string (YYYY-MM-DD) for range filtering, or null.
+     * @param {string|null} endDate - End date string (YYYY-MM-DD) for range filtering, or null.
+     */
     function renderTransactions(selectedMonth, selectedCategory = '', startDate = null, endDate = null) {
         const transactionsListDiv = document.getElementById('transactionsList');
         if (!transactionsListDiv) return;
 
-        let filteredData = allFetchedData.filter(entry => { // Use allFetchedData here
+        let filteredData = allFetchedData.filter(entry => {
             const amount = parseFloat(entry.Amount);
             const date = new Date(entry.Date);
             const entryType = entry.Type ? entry.Type.toLowerCase() : '';
-            const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : ''; // Corrected property name
+            const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : '';
 
             if (isNaN(amount) || isNaN(date.getTime()) || !entryType) {
-                console.warn('Skipping malformed entry:', entry);
-                return false;
+                return false; // Skip invalid entries
             }
 
             const entryDate = new Date(entry.Date);
-            entryDate.setHours(0, 0, 0, 0);
+            entryDate.setHours(0, 0, 0, 0); // Normalize date to start of day
 
+            // Month filtering (only applies if date range is NOT active)
             if (selectedMonth !== null && !(startDate || endDate)) {
                 if (entryDate.getMonth() + 1 !== selectedMonth) {
                     return false;
                 }
             }
 
-            if (selectedCategory) {
+            // Category filtering
+            if (selectedCategory && selectedCategory !== '') {
                 const lowerCaseSelectedCategory = selectedCategory.toLowerCase();
-                const actualCategory = entry['What kind?'] ? entry['What kind?'].toLowerCase() : ''; // Corrected property name
-                const entryCategoryType = entry.Type ? entry.Type.toLowerCase() : '';
+                const actualCategory = entry['What kind?'] ? entry['What kind?'].toLowerCase() : '';
 
                 if (lowerCaseSelectedCategory === 'gains') {
-                    if (entryCategoryType !== 'gains') return false;
+                    if (entryType !== 'gains') return false;
                 } else if (lowerCaseSelectedCategory === 'expenses') {
-                    if (entryCategoryType !== 'expenses') return false;
+                    if (entryType !== 'expenses') return false;
                 } else if (actualCategory !== lowerCaseSelectedCategory) {
                     return false;
                 }
             }
 
+            // Date range filtering (takes precedence over month filter if active)
             if (startDate && endDate) {
                 const start = new Date(startDate);
                 start.setHours(0, 0, 0, 0);
                 const end = new Date(endDate);
-                end.setHours(23, 59, 59, 999);
+                end.setHours(23, 59, 59, 999); // End of day for end date
 
                 if (entryDate < start || entryDate > end) {
                     return false;
@@ -429,17 +524,31 @@ document.addEventListener('DOMContentLoaded', () => {
             return true;
         });
 
-        filteredData.sort((a, b) => new Date(b.Date) - new Date(a.Date));
+        // Sort filtered data: by date (desc), then by time (asc)
+        filteredData.sort((a, b) => {
+            const dateA = new Date(a.Date);
+            const dateB = new Date(b.Date);
+            // If dates are different, sort by date descending
+            if (dateB.getTime() !== dateA.getTime()) {
+                return dateB.getTime() - dateA.getTime();
+            }
+            // If dates are the same, sort by time ascending
+            const timeA = a.Time ? a.Time.split(':').map(Number) : [0, 0, 0];
+            const timeB = b.Time ? b.Time.split(':').map(Number) : [0, 0, 0];
+            if (timeA[0] !== timeB[0]) return timeA[0] - timeB[0];
+            if (timeA[1] !== timeB[1]) return timeA[1] - timeB[1];
+            return (timeA[2] || 0) - (timeB[2] || 0); // Handle missing seconds gracefully
+        });
 
-        transactionsListDiv.innerHTML = '';
+        transactionsListDiv.innerHTML = ''; // Clear previous transactions
 
         const groupedTransactions = {};
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-
         const yesterday = new Date(today);
         yesterday.setDate(today.getDate() - 1);
 
+        // Group transactions by date
         filteredData.forEach(entry => {
             const entryDate = new Date(entry.Date);
             entryDate.setHours(0, 0, 0, 0);
@@ -459,19 +568,22 @@ document.addEventListener('DOMContentLoaded', () => {
             groupedTransactions[dateHeader].push(entry);
         });
 
+        // Sort date headers for display (Today, Yesterday, then chronological descending)
         const sortedDates = Object.keys(groupedTransactions).sort((a, b) => {
             if (a === 'Today') return -1;
             if (b === 'Today') return 1;
-            if (a === 'Yesterday') return -1;
+            if (a === 'Yesterday') return -1; // Yesterday comes after Today, before other dates
             if (b === 'Yesterday') return 1;
+
             const dateA = new Date(a);
             const dateB = new Date(b);
             if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
-                return dateB - dateA;
+                return dateB.getTime() - dateA.getTime(); // Sort by date descending
             }
-            return 0;
+            return 0; // Maintain original order if dates are invalid
         });
 
+        // Render each grouped date's transactions
         sortedDates.forEach(dateHeader => {
             const groupDiv = document.createElement('div');
             groupDiv.classList.add('transaction-group');
@@ -481,12 +593,13 @@ document.addEventListener('DOMContentLoaded', () => {
             headerDiv.textContent = dateHeader;
             groupDiv.appendChild(headerDiv);
 
+            // Sort transactions within each group by time (ascending)
             groupedTransactions[dateHeader].sort((a, b) => {
                 const timeA = a.Time ? a.Time.split(':').map(Number) : [0, 0, 0];
                 const timeB = b.Time ? b.Time.split(':').map(Number) : [0, 0, 0];
                 if (timeA[0] !== timeB[0]) return timeA[0] - timeB[0];
                 if (timeA[1] !== timeB[1]) return timeA[1] - timeB[1];
-                return timeA[2] - timeB[2];
+                return (timeA[2] || 0) - (timeB[2] || 0);
             });
 
             groupedTransactions[dateHeader].forEach(entry => {
@@ -498,6 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const { category: mappedCategory, icon: categoryIcon } = mapCategoryAndIcon(entry.Type, entry['What kind?']);
 
+                // Apply category-specific background colors for icons
                 if (entry.Type && entry.Type.toLowerCase() === 'gains') {
                      categoryIconDiv.classList.add('category-gain');
                 } else {
@@ -505,6 +619,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         case 'food': categoryIconDiv.classList.add('category-food'); break;
                         case 'medicines': categoryIconDiv.classList.add('category-medicines'); break;
                         case 'shopping': categoryIconDiv.classList.add('category-shopping'); break;
+                        case 'transportation': categoryIconDiv.classList.add('category-transportation'); break;
+                        case 'utility bills': categoryIconDiv.classList.add('category-utility-bills'); break;
                         default: categoryIconDiv.classList.add('category-misc'); break;
                     }
                 }
@@ -517,6 +633,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const nameSpan = document.createElement('span');
                 nameSpan.classList.add('transaction-name');
+                // Display Description if available, otherwise 'What kind?', otherwise 'N/A'
                 nameSpan.textContent = entry.Description && entry.Description.trim() !== '' ? entry.Description : (entry['What kind?'] && entry['What kind?'].trim() !== '' ? entry['What kind?'] : 'N/A');
                 detailsDiv.appendChild(nameSpan);
 
@@ -524,12 +641,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 timeSpan.classList.add('transaction-time');
                 if (entry.Time) {
                     try {
-                        const [hours, minutes, seconds] = entry.Time.split(':').map(Number);
-                        const date = new Date();
-                        date.setHours(hours, minutes, seconds || 0);
-                        timeSpan.textContent = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                        const [hours, minutes] = entry.Time.split(':').map(Number);
+                        const tempDate = new Date(); // Use a temp date to format time
+                        tempDate.setHours(hours, minutes, 0);
+                        timeSpan.textContent = tempDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
                     } catch (e) {
-                        timeSpan.textContent = entry.Time;
+                        timeSpan.textContent = entry.Time; // Fallback if parsing fails
                     }
                 } else {
                     timeSpan.textContent = '';
@@ -553,89 +670,128 @@ document.addEventListener('DOMContentLoaded', () => {
             transactionsListDiv.appendChild(groupDiv);
         });
 
+        // Display message if no transactions found
         if (filteredData.length === 0) {
             transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No transactions found for the selected filters.</p>';
         }
     }
 
-    // --- Common Logic & Event Listeners ---
+    // --- Common Event Listeners (Apply to all pages with fab button) ---
 
     const fabButton = document.querySelector('.fab-button');
     if (fabButton) {
         fabButton.addEventListener('click', () => {
-            window.open(GOOGLE_FORM_URL, '_blank');
+            window.open(GOOGLE_FORM_URL, '_blank'); // Open Google Form in a new tab
         });
     }
 
+    // --- Initialize Page-Specific Logic ---
+
+    // Dashboard Page (index.html) Initialization
     if (document.getElementById('dashboard-page')) {
-        // Get dashboard filter elements
-        const dashboardStartDateInput = document.getElementById('dashboardStartDate');
-        const dashboardEndDateInput = document.getElementById('dashboardEndDate');
-        const applyDashboardFiltersButton = document.getElementById('applyDashboardFilters');
-        const clearDashboardFiltersButton = document.getElementById('clearDashboardFilters');
+        const dashboardFilterButton = document.getElementById('dashboardFilterButton');
+        const dashboardFilterOptionsContainer = document.getElementById('dashboardFilterOptionsContainer');
+        const dashboardMonthFilter = document.getElementById('dashboardMonthFilter');
+        const dashboardYearFilter = document.getElementById('dashboardYearFilter');
+        const applyDashboardFilterButton = document.getElementById('applyDashboardFilterButton');
+        const clearDashboardFilterButton = document.getElementById('clearDashboardFilterButton');
 
-        // Initial render for dashboard (no filters applied by default on load)
-        updateDashboard();
-
-        // Event listener for apply dashboard filters
-        if (applyDashboardFiltersButton) {
-            applyDashboardFiltersButton.addEventListener('click', () => {
-                const startDate = dashboardStartDateInput.value;
-                const endDate = dashboardEndDateInput.value;
-                updateDashboard(startDate, endDate);
+        // Toggle filter options visibility when filter button is clicked
+        if (dashboardFilterButton && dashboardFilterOptionsContainer) {
+            dashboardFilterButton.addEventListener('click', () => {
+                dashboardFilterOptionsContainer.style.display = dashboardFilterOptionsContainer.style.display === 'flex' ? 'none' : 'flex';
+                // Optional: add/remove an 'active' class for CSS transitions
+                dashboardFilterOptionsContainer.classList.toggle('active');
             });
         }
 
-        // Event listener for clear dashboard filters
-        if (clearDashboardFiltersButton) {
-            clearDashboardFiltersButton.addEventListener('click', () => {
-                dashboardStartDateInput.value = '';
-                dashboardEndDateInput.value = '';
-                updateDashboard(); // Call without filters to show all data
+        // Initial fetch, populate year filter, and update dashboard for current month/year
+        fetchData().then(() => {
+            populateDashboardYearFilter();
+
+            // Set default filter values to current month and year
+            const today = new Date();
+            // Check if value is already set (e.g., if user navigated back and browser remembered selection)
+            if (!dashboardMonthFilter.value) {
+                dashboardMonthFilter.value = (today.getMonth() + 1).toString();
+            }
+            if (!dashboardYearFilter.value) {
+                dashboardYearFilter.value = today.getFullYear().toString();
+            }
+
+            updateDashboard(dashboardMonthFilter.value, dashboardYearFilter.value);
+        }).catch(error => {
+            console.error("Dashboard initialization failed:", error);
+            // updateDashboard's catch block will show error messages on UI
+        });
+
+
+        // Event listener for "Apply" button on dashboard filters
+        if (applyDashboardFilterButton) {
+            applyDashboardFilterButton.addEventListener('click', () => {
+                const selectedMonth = dashboardMonthFilter.value;
+                const selectedYear = dashboardYearFilter.value;
+                updateDashboard(selectedMonth, selectedYear);
+                dashboardFilterOptionsContainer.style.display = 'none'; // Hide filters after applying
+                dashboardFilterOptionsContainer.classList.remove('active'); // Remove active class
             });
         }
 
-    } else if (document.getElementById('transactions-page')) {
-        const today = new Date();
-        let currentMonth = today.getMonth() + 1;
+        // Event listener for "Clear" button on dashboard filters
+        if (clearDashboardFilterButton) {
+            clearDashboardFilterButton.addEventListener('click', () => {
+                dashboardMonthFilter.value = ''; // Clear month selection
+                dashboardYearFilter.value = ''; // Clear year selection
+                updateDashboard('', ''); // Call without filters to show all data
+                dashboardFilterOptionsContainer.style.display = 'none'; // Hide filters after clearing
+                dashboardFilterOptionsContainer.classList.remove('active'); // Remove active class
+            });
+        }
 
-        const filterButton = document.getElementById('filterButton');
-        const filterOptionsContainer = document.getElementById('filterOptionsContainer');
-        const categoryFilterDropdown = document.getElementById('categoryFilterDropdown');
-        const startDateInput = document.getElementById('startDateInput');
-        const endDateInput = document.getElementById('endDateInput');
-        const applyFiltersButton = document.getElementById('applyFiltersButton');
-        const clearFiltersButton = document.getElementById('clearFiltersButton');
-        const monthButtons = document.querySelectorAll('.month-button');
+    }
+    // Transactions Page (transactions.html) Initialization
+    else if (document.getElementById('transactions-page')) {
+        let currentMonth = new Date().getMonth() + 1; // Default to current month
 
-        if (filterButton) {
+        const filterButton = document.getElementById('filterButton'); // From transactions.html
+        const filterOptionsContainer = document.getElementById('filterOptionsContainer'); // From transactions.html
+        const categoryFilterDropdown = document.getElementById('categoryFilterDropdown'); // From transactions.html
+        const startDateInput = document.getElementById('startDateInput'); // From transactions.html
+        const endDateInput = document.getElementById('endDateInput'); // From transactions.html
+        const applyFiltersButton = document.getElementById('applyFiltersButton'); // From transactions.html
+        const clearFiltersButton = document.getElementById('clearFiltersButton'); // From transactions.html
+        const monthButtons = document.querySelectorAll('.month-button'); // From transactions.html
+
+        // Toggle filter options visibility for transactions page
+        if (filterButton && filterOptionsContainer) {
             filterButton.addEventListener('click', () => {
                 filterOptionsContainer.style.display = filterOptionsContainer.style.display === 'flex' ? 'none' : 'flex';
             });
         }
 
+        // Event listener for "Apply" button on transactions filters
         if (applyFiltersButton) {
             applyFiltersButton.addEventListener('click', () => {
                 const selectedCategory = categoryFilterDropdown.value;
                 const startDate = startDateInput.value;
                 const endDate = endDateInput.value;
 
-                const activeMonthButton = document.querySelector('.month-button.active');
-                currentMonth = activeMonthButton ? parseInt(activeMonthButton.dataset.month) : null;
-
+                // If date range is selected, month filter is ignored for transactions page
                 const finalMonth = (startDate || endDate) ? null : currentMonth;
 
                 renderTransactions(finalMonth, selectedCategory, startDate, endDate);
-                filterOptionsContainer.style.display = 'none';
+                filterOptionsContainer.style.display = 'none'; // Hide filters after applying
             });
         }
 
+        // Event listener for "Clear" button on transactions filters
         if (clearFiltersButton) {
             clearFiltersButton.addEventListener('click', () => {
                 categoryFilterDropdown.value = '';
                 startDateInput.value = '';
                 endDateInput.value = '';
 
+                // Reset month selection to current month and activate corresponding button
                 const today = new Date();
                 currentMonth = today.getMonth() + 1;
                 monthButtons.forEach(btn => btn.classList.remove('active'));
@@ -643,11 +799,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (currentMonthBtn) {
                     currentMonthBtn.classList.add('active');
                 }
-                renderTransactions(currentMonth);
+                renderTransactions(currentMonth); // Render for current month
                 filterOptionsContainer.style.display = 'none';
             });
         }
 
+        // Set initial active month button on transactions page load
         monthButtons.forEach(button => {
             if (parseInt(button.dataset.month) === currentMonth) {
                 button.classList.add('active');
@@ -656,26 +813,32 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Update profile date display for transactions page
         const profileDateDisplay = document.getElementById('profileDateDisplay');
         if (profileDateDisplay) {
+            const today = new Date();
             const monthName = today.toLocaleDateString('en-US', { month: 'short' });
             const dayOfMonth = today.getDate();
             profileDateDisplay.innerHTML = `<span>${monthName}</span><span>${dayOfMonth}</span>`;
         }
 
+        // Event listeners for month buttons on transactions page
         monthButtons.forEach(button => {
             button.addEventListener('click', function() {
+                // Deactivate all month buttons
                 monthButtons.forEach(btn => btn.classList.remove('active'));
+                // Activate clicked button
                 this.classList.add('active');
                 currentMonth = parseInt(this.dataset.month);
-                startDateInput.value = '';
-                endDateInput.value = '';
-                categoryFilterDropdown.value = '';
+                // Clear other filters when a month button is clicked
+                if (startDateInput) startDateInput.value = '';
+                if (endDateInput) endDateInput.value = '';
+                if (categoryFilterDropdown) categoryFilterDropdown.value = '';
                 renderTransactions(currentMonth);
-                filterOptionsContainer.style.display = 'none';
+                filterOptionsContainer.style.display = 'none'; // Hide filters
             });
         });
 
-        fetchAndProcessTransactions();
+        fetchAndProcessTransactions(); // Start transactions page logic
     }
 });
