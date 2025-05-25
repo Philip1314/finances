@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const CSV_URL = 'https://docs.google.com/sheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv';
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv';
     const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header';
 
     function parseCSV(csv) {
@@ -61,36 +61,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Dashboard Specific Logic (index.html) ---
-    async function updateDashboard(startDate = null, endDate = null) { // Added startDate and endDate parameters
+    async function updateDashboard() {
         if (!document.getElementById('dashboard-page')) return;
 
         try {
             const response = await fetch(CSV_URL);
             const csv = await response.text();
-            const rawData = parseCSV(csv); // Store raw data
-
-            let filteredData = rawData;
-
-            // Apply date filtering if dates are provided
-            if (startDate && endDate) {
-                const start = new Date(startDate);
-                start.setHours(0, 0, 0, 0);
-                const end = new Date(endDate);
-                end.setHours(23, 59, 59, 999);
-
-                filteredData = rawData.filter(entry => {
-                    const entryDate = new Date(entry.Date);
-                    entryDate.setHours(0, 0, 0, 0);
-                    return entryDate >= start && entryDate <= end;
-                });
-            }
+            const data = parseCSV(csv);
 
             let totalExpensesAmount = 0;
             let totalGainsAmount = 0;
 
             const expenseCategoriesForChart = { Food: 0, Medicines: 0, Shopping: 0, Misc: 0 };
 
-            filteredData.forEach(entry => {
+            data.forEach(entry => {
                 const amount = parseFloat(entry.Amount);
                 const entryType = entry.Type ? entry.Type.toLowerCase() : '';
                 const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : '';
@@ -253,13 +237,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const uniqueCategories = new Set();
         allTransactionsData.forEach(entry => {
-            if (entry['What kind?']) { // Corrected from 'What kind'
-                uniqueCategories.add(entry['What kind?'].trim()); // Corrected from 'What kind'
+            if (entry['What kind?']) {
+                uniqueCategories.add(entry['What kind?'].trim());
             }
-            if (entry.Type && entry.Type.toLowerCase() === 'gains' && entry['What kind?'].trim() === 'Salary') { // Corrected from 'What kind'
+            if (entry.Type && entry.Type.toLowerCase() === 'gains' && entry['What kind?'].trim() === 'Salary') {
                 uniqueCategories.add('Salary'); // Explicitly add Salary for gains
             }
-            if (entry.Type && entry.Type.toLowerCase() === 'gains' && entry['What kind?'].trim() === 'Allowance') { // Corrected from 'What kind'
+            if (entry.Type && entry.Type.toLowerCase() === 'gains' && entry['What kind?'].trim() === 'Allowance') {
                 uniqueCategories.add('Allowance'); // Explicitly add Allowance for gains
             }
         });
@@ -302,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const amount = parseFloat(entry.Amount);
             const date = new Date(entry.Date);
             const entryType = entry.Type ? entry.Type.toLowerCase() : '';
-            const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : ''; // Corrected to 'What kind?'
+            const entryWhatKind = entry['What kind'] ? entry['What kind'].toLowerCase() : ''; // Use 'What kind' here
 
             if (isNaN(amount) || isNaN(date) || !entryType) {
                 console.warn('Skipping malformed entry:', entry);
@@ -320,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Category filtering
             if (selectedCategory) {
                 const lowerCaseSelectedCategory = selectedCategory.toLowerCase();
-                const actualCategory = entry['What kind?'] ? entry['What kind?'].toLowerCase() : ''; // Corrected to 'What kind?'
+                const actualCategory = entry['What kind'] ? entry['What kind'].toLowerCase() : '';
                 const entryCategoryType = entry.Type ? entry.Type.toLowerCase() : ''; // 'gains' or 'expenses'
 
                 if (lowerCaseSelectedCategory === 'gains') {
@@ -477,43 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (document.getElementById('dashboard-page')) {
-        const dashboardFilterToggle = document.getElementById('dashboardFilterToggle');
-        const dashboardFilterCard = document.getElementById('dashboardFilterCard');
-        const dashboardStartDateInput = document.getElementById('dashboardStartDateInput');
-        const dashboardEndDateInput = document.getElementById('dashboardEndDateInput');
-        const applyDashboardFiltersButton = document.getElementById('applyDashboardFiltersButton');
-        const clearDashboardFiltersButton = document.getElementById('clearDashboardFiltersButton');
-
-        // Initial load of dashboard
         updateDashboard();
-
-        // Event listener for toggling dashboard filters
-        if (dashboardFilterToggle) {
-            dashboardFilterToggle.addEventListener('click', () => {
-                dashboardFilterCard.classList.toggle('show');
-            });
-        }
-
-        // Event listener for applying dashboard filters
-        if (applyDashboardFiltersButton) {
-            applyDashboardFiltersButton.addEventListener('click', () => {
-                const startDate = dashboardStartDateInput.value;
-                const endDate = dashboardEndDateInput.value;
-                updateDashboard(startDate, endDate); // Call updateDashboard with filters
-                dashboardFilterCard.classList.remove('show'); // Hide filters after applying
-            });
-        }
-
-        // Event listener for clearing dashboard filters
-        if (clearDashboardFiltersButton) {
-            clearDashboardFiltersButton.addEventListener('click', () => {
-                dashboardStartDateInput.value = '';
-                dashboardEndDateInput.value = '';
-                updateDashboard(); // Call updateDashboard without filters to show all data
-                dashboardFilterCard.classList.remove('show'); // Hide filters after clearing
-            });
-        }
-
     } else if (document.getElementById('transactions-page')) {
         const today = new Date();
         let currentMonth = today.getMonth() + 1; // Default to current month

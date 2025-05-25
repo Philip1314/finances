@@ -11,23 +11,12 @@
 <body>
     <div class="container" id="dashboard-page">
         <header class="header">
-            <button class="hamburger-menu" id="dashboardFilterToggle">
-                &#9776; </button>
+            <a href="#" class="back-arrow" style="visibility: hidden; opacity: 0;">&larr;</a>
             <h1>Expense Manager</h1>
             <div class="profile-icon">P</div>
         </header>
 
         <main class="main-content">
-            <section class="card filter-card" id="dashboardFilterCard" style="display: none;">
-                <div class="filter-date-group">
-                    <label for="dashboardStartDateInput">Start Date:</label>
-                    <input type="date" id="dashboardStartDateInput">
-                    <label for="dashboardEndDateInput">End Date:</label>
-                    <input type="date" id="dashboardEndDateInput">
-                </div>
-                <button class="apply-filters-button" id="applyDashboardFiltersButton">Apply Filters</button>
-                <button class="clear-filters-button" id="clearDashboardFiltersButton">Clear Filters</button>
-            </section>
             <section class="card summary-card">
                 <div class="chart-container">
                     <canvas id="expenseChart"></canvas>
