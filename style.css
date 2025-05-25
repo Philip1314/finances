@@ -1,153 +1,171 @@
-/* General Styling */
-:root {
-    --primary-bg: #F5F7FA; /* Light gray background */
-    --card-bg: #FFFFFF; /* White card background */
-    --text-dark: #333333; /* Dark text for headings */
-    --text-light: #666666; /* Lighter text for details */
-    --border-color: #E0E0E0; /* Light gray border */
-    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05); /* Small shadow */
-    --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1); /* Medium shadow */
-
-    /* Accent Colors (for charts, buttons, etc.) */
-    --accent-green: #4CAF50; /* Green for gains/positive/Food */
-    --accent-red: #F44336; /* Red for expenses/negative/Medicines */
-    --accent-orange: #FF9800; /* Orange for warnings/shopping */
-    --accent-blue: #2196F3; /* Blue for miscellaneous/buttons */
-    --accent-purple: #9C27B0; /* New color for a category if needed */
-}
-
-body {
-    font-family: 'Inter', sans-serif;
+/* Universal Box-Sizing */
+*, *::before, *::after {
+    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    background-color: var(--primary-bg);
-    color: var(--text-dark);
+}
+
+/* Root Variables for Theming */
+:root {
+    --primary-color: #007bff; /* Example: Blue */
+    --primary-dark: #0056b3; /* Example: Darker Blue */
+    --primary-rgb: 0, 123, 255; /* RGB for shadows/alpha */
+
+    --accent-green: #28a745; /* Green for gains/positive balance */
+    --accent-red: #dc3545;   /* Red for expenses/negative balance */
+    --accent-orange: #fd7e14; /* Orange for warnings/mid-range */
+    --accent-blue: #17a2b8;   /* Teal/Cyan for other categories */
+
+    --bg-color: #f4f7f6; /* Light background for the overall page */
+    --card-bg: #ffffff; /* White background for cards/panels */
+    --text-color: #333333; /* Main dark text color */
+    --text-light: #6c757d; /* Lighter text color for labels/subtitles */
+    --input-bg: #f8f9fa; /* Light background for input fields */
+    --border-color: #dee2e6; /* Border color for input fields and separators */
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Subtle shadow for cards/panels */
+
+    --button-primary-bg: var(--primary-color);
+    --button-primary-text: white;
+    --button-primary-hover-bg: var(--primary-dark);
+
+    --button-secondary-bg: #e9ecef; /* Light grey for clear button */
+    --button-secondary-text: #495057; /* Darker grey for clear button text */
+    --button-secondary-hover-bg: #dae0e5; /* Slightly darker grey on hover */
+
+    --month-button-bg: #e9ecef;
+    --month-button-text: #495057;
+    --month-button-active-bg: var(--primary-color);
+    --month-button-active-text: white;
+}
+
+/* Body and Typography */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
     line-height: 1.6;
+    margin: 0;
+    padding: 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* Container for Dashboard/Transactions Page */
 .container {
-    max-width: 500px;
+    max-width: 480px; /* Typical mobile screen width */
     margin: 0 auto;
-    background-color: var(--primary-bg);
+    background-color: var(--bg-color); /* Matches body or a slightly different shade */
     min-height: 100vh;
-    box-shadow: var(--shadow-md);
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.05); /* Soft shadow for the "phone" frame */
+    position: relative; /* For FAB button positioning */
 }
 
-/* Header - Base styles for all headers */
+/* Header Styles */
 .header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     padding: 15px 20px;
     background-color: var(--card-bg);
-    border-bottom: 1px solid var(--border-color);
-    position: sticky;
+    box-shadow: var(--shadow);
+    z-index: 10; /* Ensure header is above other content */
+    position: sticky; /* Sticky header */
     top: 0;
-    z-index: 1000;
 }
 
-/* Specific to dashboard header */
-#dashboard-page .header {
-    justify-content: space-between; /* Space out title, back arrow, profile icon */
-}
-#dashboard-page .header h1 {
-    flex-grow: 1; /* Allow title to take available space */
-    text-align: left; /* Left-align the title */
-    margin-right: 0;
-    padding-left: 0;
-}
-#dashboard-page .header .back-arrow {
-    padding-right: 0; /* No extra padding for dashboard back arrow */
+.header h1 {
+    font-size: 1.3em;
+    font-weight: 700;
+    color: var(--text-color);
+    flex-grow: 1; /* Allows h1 to take available space */
+    text-align: center; /* Center the title */
 }
 
-/* New: Dashboard Filter Button in Header */
-.dashboard-filter-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0 10px; /* Adjust padding as needed */
-    margin-right: 5px; /* Space between filter and profile icon */
-    display: flex; /* To center SVG if it has padding */
-    align-items: center;
-    justify-content: center;
-}
-.dashboard-filter-button svg {
-    fill: var(--text-dark); /* Color of the filter icon */
-    width: 24px;
-    height: 24px;
-}
-.dashboard-filter-button:hover {
-    opacity: 0.8;
-}
-
-
-/* Specific to transactions.html header */
-#transactions-page .header {
-    justify-content: space-between; /* Simply justify content to space out arrow and date circle */
-}
-
-.back-arrow {
-    font-size: 1.8rem;
-    color: var(--text-dark);
+.header .back-arrow {
+    font-size: 1.8em;
+    color: var(--text-color);
     text-decoration: none;
-    flex-shrink: 0; /* Prevent arrow from shrinking */
+    margin-right: 15px;
+    transition: opacity 0.3s ease, visibility 0.3s ease; /* For hiding/showing */
 }
 
-/* Updated profile-icon to also act as the date display */
-.profile-icon {
-    width: 56px; /* Make it slightly larger for the date or initial 'P' */
-    height: 56px;
+.header .profile-icon {
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    background-color: var(--accent-orange);
+    background-color: var(--primary-color);
     color: white;
     display: flex;
-    flex-direction: column; /* Stack month and day on transactions page, or center 'P' */
-    justify-content: center;
     align-items: center;
-    font-weight: bold;
-    font-size: 1rem; /* Adjust font size for date or 'P' */
-    line-height: 1.2; /* Spacing for stacked text */
-    flex-shrink: 0;
-    padding: 2px; /* Small padding inside circle */
+    justify-content: center;
+    font-weight: 600;
+    font-size: 1.1em;
+    margin-left: 15px; /* Space from other elements */
 }
 
-/* Styles specific to the date display within the profile-icon on transactions page */
-#transactions-page .profile-icon span:first-child { /* Month */
-    font-size: 0.8rem;
-    font-weight: normal;
+/* Dashboard Filter Button */
+.header .dashboard-filter-button,
+.header .filter-button { /* Apply to both dashboard and transaction filter buttons */
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    margin-left: auto; /* Pushes the button to the right before the profile icon */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease;
 }
-#transactions-page .profile-icon span:last-child { /* Day */
-    font-size: 1.5rem;
-    font-weight: bold;
+
+.header .dashboard-filter-button:hover,
+.header .filter-button:hover {
+    transform: scale(1.1);
 }
+
+.header .dashboard-filter-button svg,
+.header .filter-button svg {
+    fill: var(--text-color); /* Match header text color */
+    transition: fill 0.2s ease;
+}
+
+.header .dashboard-filter-button:hover svg,
+.header .filter-button:hover svg {
+    fill: var(--primary-color); /* Change color on hover */
+}
+
 
 /* Main Content Area */
 .main-content {
     padding: 20px;
-}
-
-/* Cards */
-.card {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: var(--shadow-sm);
-}
-
-/* Summary Card (Donut Chart) */
-.summary-card {
+    flex-grow: 1; /* Allows main content to take remaining space */
     display: flex;
     flex-direction: column;
+    gap: 15px; /* Spacing between sections/cards */
+}
+
+/* Card Styles */
+.card {
+    background-color: var(--card-bg);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    position: relative; /* For elements positioned within cards */
+}
+
+/* Summary Card (Chart) */
+.summary-card {
     align-items: center;
+    padding: 25px 20px; /* More vertical padding for chart */
 }
 
 .chart-container {
     position: relative;
-    width: 200px;
-    height: 200px;
+    width: 180px; /* Fixed size for the chart */
+    height: 180px;
     margin-bottom: 20px;
 }
 
@@ -162,46 +180,52 @@ body {
     left: 50%;
     transform: translate(-50%, -50%);
     text-align: center;
-    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none; /* Allows clicks to pass through to chart */
 }
 
 .net-expense-overlay .label {
-    display: block;
-    font-size: 0.9rem;
+    font-size: 0.8em;
     color: var(--text-light);
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 }
 
 .net-expense-overlay .amount {
-    display: block;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--text-dark);
+    font-size: 1.3em;
+    font-weight: 700;
+    color: var(--text-color);
 }
 
+/* Legend for Chart */
 .legend {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns */
+    gap: 12px 20px; /* Row and column gap */
     width: 100%;
+    max-width: 250px; /* Limit legend width */
+    margin-top: 10px;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    font-size: 0.9rem;
-    color: var(--text-light);
+    font-size: 0.9em;
+    color: var(--text-color);
+    font-weight: 500;
 }
 
 .legend-item .dot {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
     margin-right: 8px;
+    flex-shrink: 0; /* Prevent dot from shrinking */
 }
 
-/* Legend dot colors - MUST match Chart.js backgroundColors */
+/* Legend dot colors (must match Chart.js colors) */
 .legend-item .dot.food { background-color: var(--accent-green); }
 .legend-item .dot.medicines { background-color: var(--accent-red); }
 .legend-item .dot.shopping { background-color: var(--accent-orange); }
@@ -210,348 +234,537 @@ body {
 
 /* Limit Card (Remaining Balance) */
 .limit-card {
-    display: flex;
-    justify-content: space-between;
+    flex-direction: row;
     align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
 }
 
 .limit-progress-wrapper {
     position: relative;
-    width: 80px; /* Explicit width */
-    height: 80px; /* Explicit height */
-    flex-shrink: 0;
+    width: 70px; /* Size of the progress circle */
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0; /* Prevent shrinking */
 }
 
 .progress-circle {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
+    transform: rotate(-90deg); /* Start from top */
+}
+
+.progress-ring-track, .progress-ring-progress {
+    fill: none;
+    stroke-width: 8; /* Thickness of the ring */
+    transition: stroke-dashoffset 0.5s ease-in-out, stroke 0.3s ease;
 }
 
 .progress-ring-track {
-    stroke: var(--border-color);
-    fill: transparent;
-    stroke-width: 6;
+    stroke: var(--border-color); /* Background color of the ring */
 }
 
 .progress-ring-progress {
-    stroke: var(--accent-green);
-    fill: transparent;
-    stroke-width: 6;
-    transition: stroke-dashoffset 0.35s, stroke 0.35s;
-    transform: rotate(-90deg);
-    transform-origin: 50% 50%;
+    stroke: var(--accent-green); /* Dynamic color set by JS */
+    stroke-linecap: round; /* Rounded ends for the progress bar */
 }
 
-/* Refined progress text positioning */
 .progress-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 1.1rem; /* Adjust as needed */
-    font-weight: bold;
-    color: var(--text-dark);
-    pointer-events: none;
-    z-index: 1;
-    text-align: center;
-    line-height: 1.1; /* Slightly adjust line-height for better vertical centering */
-    /* Ensure no unwanted spacing from inherited properties */
-    margin: 0;
-    padding: 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--text-color);
 }
-
 
 .limit-details {
-    display: flex;
-    flex-direction: column;
     flex-grow: 1;
     margin-left: 15px;
+    display: flex;
+    flex-direction: column;
 }
 
 .limit-title {
-    font-size: 0.9rem;
+    font-size: 0.9em;
     color: var(--text-light);
+    margin-bottom: 4px;
 }
 
 .limit-amount {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: var(--text-dark);
+    font-size: 1.15em;
+    font-weight: 600;
+    color: var(--text-color);
 }
 
 .arrow-link {
-    font-size: 2rem;
+    font-size: 1.8em;
     color: var(--text-light);
     text-decoration: none;
-    padding-left: 10px;
-    flex-shrink: 0;
+    margin-left: 10px;
 }
+
 
 /* Transactions Promo Card */
 .transactions-promo-card {
-    background-color: #FFC107;
-    display: flex;
-    justify-content: space-between;
+    flex-direction: row;
     align-items: center;
-    color: var(--text-dark);
+    justify-content: space-between;
     padding: 15px 20px;
-    min-height: 100px;
-    overflow: hidden; /* Ensure image doesn't overflow card */
+    overflow: hidden; /* Hide overflowing illustration */
 }
 
 .promo-text {
-    flex-basis: 60%; /* Adjust width for text */
-    padding-right: 10px; /* Space between text and image */
-}
-
-.promo-text h2 {
-    font-size: 1.3rem;
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-weight: 600;
-}
-
-.promo-text .button {
-    background-color: var(--card-bg);
-    color: var(--text-dark);
-    padding: 8px 15px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.95rem;
-    box-shadow: var(--shadow-sm);
-    transition: background-color 0.2s;
-}
-
-.promo-text .button:hover {
-    background-color: #f0f0f0;
-}
-
-.card-illustration {
-    width: 100px; /* Fixed width for the image */
-    height: auto; /* Maintain aspect ratio */
-    display: block; /* Remove extra space below image */
-    flex-basis: 40%; /* Adjust width for image */
-    max-width: 120px; /* A bit more flexible max-width */
-    object-fit: contain; /* Ensure image fits without cropping */
-}
-
-
-/* Transactions Page Styles (transactions.html) */
-.months-nav {
-    display: flex;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 10px 20px;
-    gap: 10px;
-    background-color: var(--card-bg);
-    border-bottom: 1px solid var(--border-color);
-    white-space: nowrap;
-    justify-content: flex-start;
-    align-items: center;
-}
-
-.month-button {
-    background-color: var(--primary-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 8px 15px;
-    font-size: 0.9rem;
-    color: var(--text-dark);
-    cursor: pointer;
-    transition: background-color 0.2s, border-color 0.2s;
-    flex-shrink: 0;
-}
-
-.month-button.active {
-    background-color: var(--accent-orange);
-    color: white;
-    border-color: var(--accent-orange);
-}
-
-.month-button:hover:not(.active) {
-    background-color: #E0E0E0;
-}
-
-.transactions-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 20px;
-    margin-bottom: 10px;
-    padding: 0 20px;
-}
-
-.transactions-header-row h2 {
-    font-size: 1.3rem;
-    margin: 0;
-    font-weight: 600;
-}
-
-.filter-button {
-    background-color: var(--primary-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 8px 15px;
-    font-size: 0.9rem;
-    color: var(--text-dark);
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-
-.filter-button:hover {
-    background-color: #E0E0E0;
-}
-
-/* Filter Options Container Styling for Transactions page */
-.filter-options-container {
-    background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 15px 20px;
-    margin: 0 20px 20px 20px;
-    box-shadow: var(--shadow-sm);
-    display: none; /* Hidden by default, shown by JS */
-    flex-direction: column;
-    gap: 15px;
-}
-
-/* Filter Options Container Styling for Dashboard page */
-.dashboard-filter-options-container {
-    background-color: var(--card-bg);
-    border-radius: 0 0 12px 12px; /* Rounded only at bottom */
-    padding: 15px 20px;
-    margin: 0 20px 20px 20px; /* Adjusted margin */
-    box-shadow: var(--shadow-sm);
-    display: none; /* Hidden by default */
-    flex-direction: column;
-    gap: 15px;
-    border-top: 1px solid var(--border-color); /* Separator from header */
-}
-
-
-.filter-group {
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.filter-options-container label,
+.promo-text h2 {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--text-color);
+    line-height: 1.3;
+}
+
+.promo-text .button {
+    display: inline-block;
+    padding: 8px 15px;
+    background-color: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 0.9em;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+    align-self: flex-start; /* Align button to the left */
+}
+
+.promo-text .button:hover {
+    background-color: var(--primary-dark);
+}
+
+.card-illustration {
+    width: 100px; /* Adjust size as needed */
+    height: 100px;
+    object-fit: contain;
+    margin-left: 15px;
+    /* Optional: Position to overlap slightly or be visually interesting */
+    position: relative;
+    right: -10px; /* Example: pull it out slightly */
+    top: 5px;
+}
+
+/* Floating Action Button (FAB) */
+.fab-button {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 2.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+    z-index: 100; /* Ensure it's on top */
+}
+
+.fab-button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.fab-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Dashboard Filter Specific Styles --- */
+.dashboard-filter-options-container {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    gap: 12px; /* Spacing between filter groups */
+    padding: 20px; /* Internal padding */
+    background-color: var(--card-bg); /* Uses your theme's card background color */
+    border-radius: 12px;
+    margin: 15px; /* Margin around the container */
+    box-shadow: var(--shadow); /* Uses your theme's shadow */
+    position: absolute; /* Allows precise positioning */
+    top: 60px; /* Aligns below the header, adjust if your header height differs */
+    right: 15px; /* Aligns to the right, consistent with profile icon */
+    width: 250px; /* Fixed width for the filter panel */
+    z-index: 1000; /* Ensures it appears above other content */
+    /* Optional: Add a transition for a smoother appearance */
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none; /* Prevents interaction when hidden */
+}
+
+.dashboard-filter-options-container.active {
+    display: flex; /* Show when 'active' class is added by JS */
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: all; /* Allows interaction when active */
+}
+
+.dashboard-filter-options-container .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px; /* Spacing between label and select/input */
+}
+
 .dashboard-filter-options-container label {
-    font-size: 0.9rem;
-    color: var(--text-dark);
+    font-size: 0.9em;
+    color: var(--text-light); /* Lighter text color for labels */
     font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.dashboard-filter-options-container select {
+    padding: 10px 12px; /* Padding inside the select box */
+    border: 1px solid var(--border-color); /* Border color for inputs */
+    border-radius: 8px;
+    background-color: var(--input-bg); /* Background color for inputs */
+    color: var(--text-color); /* Text color for input values */
+    font-family: 'Inter', sans-serif;
+    font-size: 1em;
+    appearance: none; /* Removes default OS dropdown arrow */
+    -webkit-appearance: none; /* For Webkit browsers */
+    /* Custom arrow using SVG background-image */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23888888'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    cursor: pointer;
+}
+
+.dashboard-filter-options-container select:focus {
+    border-color: var(--primary-color); /* Highlight border on focus */
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2); /* Subtle focus shadow */
+}
+
+.dashboard-filter-options-container .filter-buttons-group {
+    display: flex;
+    justify-content: flex-end; /* Aligns buttons to the right */
+    gap: 10px; /* Spacing between buttons */
+    margin-top: 15px; /* Space above the buttons */
+}
+
+.apply-dashboard-filter-button,
+.clear-dashboard-filter-button {
+    padding: 10px 18px; /* Padding for buttons */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95em;
+    transition: background-color 0.2s ease, transform 0.1s ease; /* Smooth hover effects */
+}
+
+.apply-dashboard-filter-button {
+    background-color: var(--primary-color); /* Your primary theme color */
+    color: white;
+}
+
+.apply-dashboard-filter-button:hover {
+    background-color: var(--primary-dark); /* Darker shade for hover */
+    transform: translateY(-1px); /* Slight lift effect */
+}
+
+.clear-dashboard-filter-button {
+    background-color: var(--button-secondary-bg); /* Secondary button background */
+    color: var(--button-secondary-text); /* Secondary button text color */
+}
+
+.clear-dashboard-filter-button:hover {
+    background-color: var(--button-secondary-hover-bg); /* Hover background for secondary button */
+    transform: translateY(-1px);
+}
+
+
+/* --- Transactions Page Specific Styles (transactions.html) --- */
+
+.transactions-container { /* This would be the .container for transactions.html */
+    /* Shared styles with .container for consistent mobile framing */
+    max-width: 480px;
+    margin: 0 auto;
+    background-color: var(--bg-color);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+    position: relative;
+}
+
+.profile-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background-color: var(--card-bg);
+    box-shadow: var(--shadow);
+    margin-bottom: 15px;
+}
+
+.profile-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 600;
+    font-size: 0.9em;
+    line-height: 1.2;
+}
+
+.profile-date span:first-child {
+    font-size: 0.7em;
+    opacity: 0.8;
+}
+.profile-date span:last-child {
+    font-size: 1.2em;
+}
+
+.profile-greeting h2 {
+    font-size: 1.1em;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.profile-greeting p {
+    font-size: 0.8em;
+    color: var(--text-light);
+}
+
+/* Month Filter Buttons */
+.month-filter-buttons {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    margin-bottom: 20px;
+    overflow-x: auto; /* Enable horizontal scrolling */
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
+    -ms-overflow-style: none; /* Hide scrollbar for IE/Edge */
+}
+
+/* Hide scrollbar for Webkit browsers */
+.month-filter-buttons::-webkit-scrollbar {
+    display: none;
+}
+
+.month-button {
+    background-color: var(--month-button-bg);
+    color: var(--month-button-text);
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 0.9em;
+    font-weight: 500;
+    cursor: pointer;
+    flex-shrink: 0; /* Prevent buttons from shrinking */
+    margin-right: 8px; /* Space between buttons */
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.month-button:last-child {
+    margin-right: 0; /* No margin on the last button */
+}
+
+.month-button.active {
+    background-color: var(--month-button-active-bg);
+    color: var(--month-button-active-text);
+    font-weight: 600;
+}
+
+.month-button:hover:not(.active) {
+    background-color: #d1d9e0; /* Slightly darker hover for inactive */
+}
+
+/* Filter Options Container (Transactions Page) */
+.filter-options-container {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    margin: 15px;
+    box-shadow: var(--shadow);
+    position: absolute;
+    top: 60px; /* Adjust based on your header height */
+    right: 15px;
+    width: 250px;
+    z-index: 1000;
+}
+
+.filter-options-container .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filter-options-container label {
+    font-size: 0.9em;
+    color: var(--text-light);
+    font-weight: 500;
+    margin-bottom: 2px;
 }
 
 .filter-options-container select,
-.filter-options-container input[type="date"],
-.dashboard-filter-options-container select {
-    width: 100%;
+.filter-options-container input[type="date"] {
     padding: 10px 12px;
     border: 1px solid var(--border-color);
     border-radius: 8px;
+    background-color: var(--input-bg);
+    color: var(--text-color);
     font-family: 'Inter', sans-serif;
-    font-size: 0.95rem;
-    color: var(--text-dark);
-    background-color: var(--primary-bg);
-    box-sizing: border-box;
-    -webkit-appearance: none;
-    -moz-appearance: none;
+    font-size: 1em;
+    /* Remove default appearance for select and date input */
     appearance: none;
-}
-
-.filter-options-container select,
-.dashboard-filter-options-container select {
-    background-image: url('data:image/svg+xml;utf8,<svg fill="%23333333" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+    -webkit-appearance: none;
+    /* Custom arrow for select */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23888888'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
-    padding-right: 30px;
+    background-size: 16px;
+    cursor: pointer;
 }
 
-.filter-buttons-group {
+.filter-options-container input[type="date"] {
+    background-image: none; /* No custom arrow for date input */
+}
+
+.filter-options-container select:focus,
+.filter-options-container input[type="date"]:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+}
+
+.filter-options-container .filter-buttons-group {
     display: flex;
-    gap: 10px; /* Space between apply and clear buttons */
-    justify-content: space-between;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
 }
 
 .apply-filters-button,
-.clear-filters-button,
-.apply-dashboard-filter-button,
-.clear-dashboard-filter-button {
-    background-color: var(--accent-blue);
-    color: white;
-    padding: 10px 15px;
+.clear-filters-button {
+    padding: 10px 18px;
     border: none;
     border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s;
-    flex-grow: 1; /* Make buttons share space */
+    font-weight: 600;
+    font-size: 0.95em;
+    transition: background-color 0.2s ease, transform 0.1s ease;
 }
 
-.apply-filters-button:hover,
-.apply-dashboard-filter-button:hover {
-    background-color: #1976D2;
+.apply-filters-button {
+    background-color: var(--primary-color);
+    color: white;
 }
 
-.clear-filters-button,
-.clear-dashboard-filter-button {
-    background-color: var(--text-light);
+.apply-filters-button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
 }
 
-.clear-filters-button:hover,
-.clear-dashboard-filter-button:hover {
-    background-color: #555555;
+.clear-filters-button {
+    background-color: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
+}
+
+.clear-filters-button:hover {
+    background-color: var(--button-secondary-hover-bg);
+    transform: translateY(-1px);
 }
 
 
 /* Transactions List */
-.transactions-list {
-    margin-top: 10px;
-    padding: 0 20px;
+.transactions-list-section {
+    padding: 0 20px; /* Padding for the section itself */
+    flex-grow: 1; /* Allows it to expand */
+}
+
+#transactionsList {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Space between date groups */
+    padding-bottom: 80px; /* Space for FAB button */
 }
 
 .transaction-group {
-    margin-bottom: 25px;
+    background-color: var(--card-bg);
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    padding: 15px;
 }
 
 .transaction-date-header {
-    font-size: 1rem;
-    font-weight: bold;
-    color: var(--text-dark);
-    margin-bottom: 15px;
+    font-size: 0.9em;
+    font-weight: 600;
+    color: var(--text-light);
+    margin-bottom: 10px;
     padding-bottom: 5px;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color); /* Separator */
 }
 
 .transaction-item {
     display: flex;
     align-items: center;
-    background-color: var(--card-bg);
-    border-radius: 10px;
-    padding: 12px 15px;
-    margin-bottom: 10px;
-    box-shadow: var(--shadow-sm);
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.transaction-item:last-child {
+    border-bottom: none; /* No border on the last item */
 }
 
 .transaction-category-icon {
     width: 40px;
     height: 40px;
-    border-radius: 50%;
+    border-radius: 10px;
     display: flex;
-    justify-content: center;
     align-items: center;
-    font-size: 1.3rem;
-    margin-right: 15px;
+    justify-content: center;
+    font-size: 1.2em;
     flex-shrink: 0;
+    margin-right: 12px;
+    color: white; /* Emoji color */
+    background-color: #ccc; /* Fallback */
 }
 
-/* Category icon background colors */
-.transaction-category-icon.category-gain { background-color: #E8F5E9; }
-.transaction-category-icon.category-food { background-color: #FFF3E0; }
-.transaction-category-icon.category-medicines { background-color: #FFEBEE; }
-.transaction-category-icon.category-shopping { background-color: #E3F2FD; }
-.transaction-category-icon.category-misc { background-color: #EDE7F6; }
+/* Specific Category Icon Backgrounds (match Chart.js colors and legend dots) */
+.transaction-category-icon.category-food { background-color: var(--accent-green); }
+.transaction-category-icon.category-medicines { background-color: var(--accent-red); }
+.transaction-category-icon.category-shopping { background-color: var(--accent-orange); }
+.transaction-category-icon.category-misc { background-color: var(--accent-blue); }
+.transaction-category-icon.category-transportation { background-color: #8a2be2; } /* BlueViolet */
+.transaction-category-icon.category-utility-bills { background-color: #ff4500; } /* OrangeRed */
+.transaction-category-icon.category-gain { background-color: #008080; } /* Teal/DarkCyan for gains */
 
 
 .transaction-details {
@@ -561,21 +774,22 @@ body {
 }
 
 .transaction-name {
-    font-size: 1rem;
+    font-size: 1em;
     font-weight: 500;
-    color: var(--text-dark);
+    color: var(--text-color);
 }
 
 .transaction-time {
-    font-size: 0.8rem;
+    font-size: 0.8em;
     color: var(--text-light);
+    margin-top: 2px;
 }
 
 .transaction-amount {
-    font-size: 1.1rem;
-    font-weight: bold;
-    margin-left: 15px;
-    flex-shrink: 0;
+    font-size: 1em;
+    font-weight: 600;
+    margin-left: 10px;
+    flex-shrink: 0; /* Prevent amount from shrinking */
 }
 
 .transaction-amount.expense {
@@ -584,38 +798,4 @@ body {
 
 .transaction-amount.gain {
     color: var(--accent-green);
-}
-
-/* Floating Action Button */
-.fab-button {
-    position: fixed;
-    bottom: 25px;
-    right: 25px;
-    background-color: var(--accent-orange);
-    color: white;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    border: none;
-    font-size: 2.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    box-shadow: var(--shadow-md);
-    transition: background-color 0.2s, transform 0.2s;
-    z-index: 1000;
-}
-
-.fab-button:active {
-    transform: scale(0.95);
-}
-
-/* Responsive Adjustments (Optional, for wider screens if needed) */
-@media (min-width: 600px) {
-    .container {
-        border-radius: 10px;
-        margin-top: 20px;
-        margin-bottom: 20px;
-    }
 }
