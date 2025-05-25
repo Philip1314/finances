@@ -61,20 +61,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Dashboard Specific Logic (index.html) ---
-    async function updateDashboard() {
+    async function updateDashboard(startDate = null, endDate = null) { // Added startDate and endDate parameters
         if (!document.getElementById('dashboard-page')) return;
 
         try {
             const response = await fetch(CSV_URL);
             const csv = await response.text();
-            const data = parseCSV(csv);
+            const rawData = parseCSV(csv); // Store raw data
+
+            let filteredData = rawData;
+
+            // Apply date filtering if dates are provided
+            if (startDate && endDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+
+                filteredData = rawData.filter(entry => {
+                    const entryDate = new Date(entry.Date);
+                    entryDate.setHours(0, 0, 0, 0);
+                    return entryDate >= start && entryDate <= end;
+                });
+            }
 
             let totalExpensesAmount = 0;
             let totalGainsAmount = 0;
 
             const expenseCategoriesForChart = { Food: 0, Medicines: 0, Shopping: 0, Misc: 0 };
 
-            data.forEach(entry => {
+            filteredData.forEach(entry => {
                 const amount = parseFloat(entry.Amount);
                 const entryType = entry.Type ? entry.Type.toLowerCase() : '';
                 const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : '';
@@ -461,7 +477,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (document.getElementById('dashboard-page')) {
+        const dashboardStartDateInput = document.getElementById('dashboardStartDateInput');
+        const dashboardEndDateInput = document.getElementById('dashboardEndDateInput');
+        const applyDashboardFiltersButton = document.getElementById('applyDashboardFiltersButton');
+        const clearDashboardFiltersButton = document.getElementById('clearDashboardFiltersButton');
+
+        // Initial load of dashboard
         updateDashboard();
+
+        // Event listener for applying dashboard filters
+        if (applyDashboardFiltersButton) {
+            applyDashboardFiltersButton.addEventListener('click', () => {
+                const startDate = dashboardStartDateInput.value;
+                const endDate = dashboardEndDateInput.value;
+                updateDashboard(startDate, endDate); // Call updateDashboard with filters
+            });
+        }
+
+        // Event listener for clearing dashboard filters
+        if (clearDashboardFiltersButton) {
+            clearDashboardFiltersButton.addEventListener('click', () => {
+                dashboardStartDateInput.value = '';
+                dashboardEndDateInput.value = '';
+                updateDashboard(); // Call updateDashboard without filters to show all data
+            });
+        }
+
     } else if (document.getElementById('transactions-page')) {
         const today = new Date();
         let currentMonth = today.getMonth() + 1; // Default to current month
