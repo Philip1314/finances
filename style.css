@@ -50,18 +50,27 @@ body {
 
 /* Specific to dashboard header */
 #dashboard-page .header {
-    justify-content: space-between; /* Space out title, back arrow, profile icon */
+    justify-content: space-between; /* Space out hamburger, title, profile icon */
 }
 #dashboard-page .header h1 {
     flex-grow: 1; /* Allow title to take available space */
-    text-align: left; /* Left-align the title */
-    margin-right: 0;
-    padding-left: 0;
-}
-#dashboard-page .header .back-arrow {
-    padding-right: 0; /* No extra padding for dashboard back arrow */
+    text-align: center; /* Center the title */
+    margin: 0; /* Remove default margin */
 }
 
+/* Hamburger Menu Button */
+.hamburger-menu {
+    background: none;
+    border: none;
+    font-size: 1.8rem;
+    color: var(--text-dark);
+    cursor: pointer;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
 
 /* Specific to transactions.html header */
 #transactions-page .header {
@@ -397,10 +406,32 @@ body {
 
 /* Reusing .filter-card for dashboard's new filter card */
 .filter-card {
-    display: flex;
+    display: flex; /* Changed from 'none' to 'flex' so JS can toggle */
     flex-direction: column;
     gap: 15px;
+    /* Added transition for smooth display */
+    transition: all 0.3s ease-in-out;
+    opacity: 0; /* Initially hidden */
+    max-height: 0; /* Initially collapsed */
+    overflow: hidden; /* Hide overflow content */
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    border: none; /* Remove border when hidden */
 }
+
+/* Class to show the filter card */
+.filter-card.show {
+    opacity: 1;
+    max-height: 200px; /* Adjust to content height */
+    padding-top: 20px;
+    padding-bottom: 20px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color); /* Restore border when shown */
+}
+
 
 .filter-dropdown-group,
 .filter-date-group {
