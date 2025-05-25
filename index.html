@@ -13,8 +13,42 @@
         <header class="header">
             <a href="#" class="back-arrow" style="visibility: hidden; opacity: 0;">&larr;</a>
             <h1>Expense Manager</h1>
+            <button class="dashboard-filter-button" id="dashboardFilterButton">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#333333"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M3 17v2h18v-2H3zm0-7v2h18v-2H3zm0-7v2h18V3H3z"/></svg>
+            </button>
             <div class="profile-icon">P</div>
         </header>
+
+        <div class="dashboard-filter-options-container" id="dashboardFilterOptionsContainer">
+            <div class="filter-group">
+                <label for="dashboardMonthFilter">Month:</label>
+                <select id="dashboardMonthFilter">
+                    <option value="">All Months</option>
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="dashboardYearFilter">Year:</label>
+                <select id="dashboardYearFilter">
+                    <option value="">All Years</option>
+                    </select>
+            </div>
+            <div class="filter-buttons-group">
+                <button class="apply-dashboard-filter-button" id="applyDashboardFilterButton">Apply</button>
+                <button class="clear-dashboard-filter-button" id="clearDashboardFilterButton">Clear</button>
+            </div>
+        </div>
 
         <main class="main-content">
             <section class="card summary-card">
