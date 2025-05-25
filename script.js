@@ -1,9 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv';
-    // ADDED: GOOGLE_FORM_URL was missing from your provided code
-    const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UE-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header'; // Ensure this is your correct form URL
+    const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header';
 
-    let allFetchedData = []; // To store all data once fetched (used by both dashboard and transactions)
+    let allFetchedData = []; // To store all data once fetched for both dashboard and transactions
 
     function parseCSV(csv) {
         const lines = csv.split('\n').filter(line => line.trim() !== '');
@@ -63,164 +62,233 @@ document.addEventListener('DOMContentLoaded', () => {
         return { category, icon };
     }
 
-    // --- Dashboard Specific Logic (index.html) ---
-    async function updateDashboard() {
-        if (!document.getElementById('dashboard-page')) return;
-
-        // Fetch data if not already fetched
-        if (allFetchedData.length === 0) {
+    // Function to fetch data (now shared)
+    async function fetchData() {
+        if (allFetchedData.length === 0) { // Only fetch if data isn't already loaded
             try {
                 const response = await fetch(CSV_URL);
                 const csv = await response.text();
                 allFetchedData = parseCSV(csv);
             } catch (error) {
-                console.error('Error fetching data for dashboard:', error);
-                document.getElementById('netExpenseValue').textContent = '₱ Error';
-                document.getElementById('remainingBalanceAmount').textContent = '₱ Error';
-                return;
+                console.error('Error fetching CSV data:', error);
+                throw new Error('Failed to load data.'); // Propagate error
             }
         }
+        return allFetchedData;
+    }
 
-        let totalExpensesAmount = 0;
-        let totalGainsAmount = 0;
+    // --- Dashboard Specific Logic (index.html) ---
+    // Modified updateDashboard to accept date filters
+    async function updateDashboard(startDate = null, endDate = null) {
+        if (!document.getElementById('dashboard-page')) return;
 
-        const expenseCategoriesForChart = { Food: 0, Medicines: 0, Shopping: 0, Misc: 0 };
+        try {
+            const data = await fetchData(); // Get already fetched data or fetch it
 
-        allFetchedData.forEach(entry => {
-            const amount = parseFloat(entry.Amount);
-            const entryType = entry.Type ? entry.Type.toLowerCase() : '';
-            const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : ''; // Corrected property name
+            let filteredDashboardData = data.filter(entry => {
+                const entryDate = new Date(entry.Date);
+                entryDate.setHours(0, 0, 0, 0);
 
-            if (isNaN(amount) || !entryType || !entryWhatKind) {
-                console.warn('Dashboard - Skipping malformed entry:', entry);
-                return;
-            }
-
-            if (entryType === 'expenses') {
-                totalExpensesAmount += amount;
-                if (entryWhatKind === 'food' || entryWhatKind === 'groceries') {
-                    expenseCategoriesForChart.Food += amount;
-                } else if (entryWhatKind === 'medicines') {
-                    expenseCategoriesForChart.Medicines += amount;
-                } else if (entryWhatKind === 'online shopping') {
-                    expenseCategoriesForChart.Shopping += amount;
-                } else {
-                    expenseCategoriesForChart.Misc += amount;
+                if (isNaN(entryDate.getTime())) {
+                    console.warn('Dashboard Filter Warning: Skipping entry with invalid date:', entry);
+                    return false;
                 }
-            } else if (entryType === 'gains') {
-                totalGainsAmount += amount;
+
+                let inDateRange = true;
+                if (startDate && endDate) {
+                    const start = new Date(startDate);
+                    start.setHours(0, 0, 0, 0);
+                    const end = new Date(endDate);
+                    end.setHours(23, 59, 59, 999); // End of the day for inclusive range
+
+                    inDateRange = (entryDate >= start && entryDate <= end);
+                } else if (startDate) { // Only start date provided
+                    const start = new Date(startDate);
+                    start.setHours(0, 0, 0, 0);
+                    inDateRange = (entryDate >= start);
+                } else if (endDate) { // Only end date provided
+                    const end = new Date(endDate);
+                    end.setHours(23, 59, 59, 999);
+                    inDateRange = (entryDate <= end);
+                }
+
+                return inDateRange;
+            });
+
+
+            let totalExpensesAmount = 0;
+            let totalGainsAmount = 0;
+
+            const expenseCategoriesForChart = { Food: 0, Medicines: 0, Shopping: 0, Misc: 0, Transportation: 0, 'Utility Bills': 0 };
+            // Populate all possible expense categories from mapCategoryAndIcon
+            data.forEach(entry => {
+                if (entry.Type && entry.Type.toLowerCase() === 'expenses') {
+                    const { category } = mapCategoryAndIcon(entry.Type, entry['What kind?']);
+                    if (expenseCategoriesForChart[category] === undefined) {
+                        expenseCategoriesForChart[category] = 0;
+                    }
+                }
+            });
+
+
+            filteredDashboardData.forEach(entry => {
+                const amount = parseFloat(entry.Amount);
+                const entryType = entry.Type ? entry.Type.toLowerCase() : '';
+                const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : '';
+
+                if (isNaN(amount) || !entryType) { // Removed !entryWhatKind check here as Misc handles it
+                    console.warn('Dashboard - Skipping malformed entry:', entry);
+                    return;
+                }
+
+                if (entryType === 'expenses') {
+                    totalExpensesAmount += amount;
+                    const { category } = mapCategoryAndIcon(entry.Type, entry['What kind?']);
+                    if (expenseCategoriesForChart[category] !== undefined) {
+                        expenseCategoriesForChart[category] += amount;
+                    } else {
+                        expenseCategoriesForChart.Misc += amount; // Fallback to Misc if category not explicitly handled
+                    }
+                } else if (entryType === 'gains') {
+                    totalGainsAmount += amount;
+                }
+            });
+
+            // Update display elements
+            document.getElementById('netExpenseValue').textContent = formatCurrency(totalExpensesAmount); // Now shows filtered expenses
+
+            const remainingBalance = totalGainsAmount - totalExpensesAmount;
+            const totalIncomeOrBudget = totalGainsAmount;
+
+            document.getElementById('remainingBalanceAmount').textContent = `${formatCurrency(remainingBalance)} of ${formatCurrency(totalIncomeOrBudget)}`;
+
+            let remainingBalancePercentage = 0;
+            if (totalIncomeOrBudget > 0) {
+                remainingBalancePercentage = (remainingBalance / totalIncomeOrBudget) * 100;
             }
-        });
+            const displayPercentage = isNaN(remainingBalancePercentage) ? 0 : Math.round(remainingBalancePercentage);
+            document.getElementById('remainingBalancePct').textContent = `${displayPercentage}%`;
 
-        const netExpenseForDisplay = totalExpensesAmount;
-        document.getElementById('netExpenseValue').textContent = formatCurrency(netExpenseForDisplay);
+            // Update progress circle
+            let progressOffset = 0;
+            let progressColor = 'var(--accent-green)';
+            const radius = 34;
+            const circumference = 2 * Math.PI * radius;
 
-        const remainingBalance = totalGainsAmount - totalExpensesAmount;
-        const totalIncomeOrBudget = totalGainsAmount;
-
-        document.getElementById('remainingBalanceAmount').textContent = `${formatCurrency(remainingBalance)} of ${formatCurrency(totalIncomeOrBudget)}`;
-
-        let remainingBalancePercentage = 0;
-        if (totalIncomeOrBudget > 0) {
-            remainingBalancePercentage = (remainingBalance / totalIncomeOrBudget) * 100;
-        }
-        const displayPercentage = isNaN(remainingBalancePercentage) ? 0 : Math.round(remainingBalancePercentage);
-        document.getElementById('remainingBalancePct').textContent = `${displayPercentage}%`;
-
-        let progressOffset = 0;
-        let progressColor = 'var(--accent-green)';
-        const radius = 34;
-        const circumference = 2 * Math.PI * radius;
-
-        if (displayPercentage >= 100) {
-            progressOffset = 0;
-        } else if (displayPercentage > 0) {
-            progressOffset = circumference - (displayPercentage / 100) * circumference;
-            if (displayPercentage < 25) {
-                progressColor = 'var(--accent-orange)';
+            if (displayPercentage >= 100) {
+                progressOffset = 0;
+            } else if (displayPercentage > 0) {
+                progressOffset = circumference - (displayPercentage / 100) * circumference;
+                if (displayPercentage < 25) {
+                    progressColor = 'var(--accent-orange)';
+                }
+            } else {
+                progressOffset = circumference;
+                progressColor = 'var(--accent-red)';
             }
-        } else {
-            progressOffset = circumference;
-            progressColor = 'var(--accent-red)';
-        }
 
-        const progressCircle = document.querySelector('.progress-ring-progress');
-        if (progressCircle) {
-            progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
-            progressCircle.style.strokeDashoffset = progressOffset;
-            progressCircle.style.stroke = progressColor;
-        }
-
-        const categoryNames = ['Food', 'Medicines', 'Shopping', 'Misc'];
-        const categoryAmounts = [
-            expenseCategoriesForChart.Food,
-            expenseCategoriesForChart.Medicines,
-            expenseCategoriesForChart.Shopping,
-            expenseCategoriesForChart.Misc,
-        ];
-        const totalCategoryExpenseForChart = categoryAmounts.reduce((sum, amount) => sum + amount, 0);
-
-        document.getElementById('foodPct').textContent = `${totalCategoryExpenseForChart > 0 ? Math.round((expenseCategoriesForChart.Food / totalCategoryExpenseForChart) * 100) : 0}%`;
-        document.getElementById('medicinesPct').textContent = `${totalCategoryExpenseForChart > 0 ? Math.round((expenseCategoriesForChart.Medicines / totalCategoryExpenseForChart) * 100) : 0}%`;
-        document.getElementById('shoppingPct').textContent = `${totalCategoryExpenseForChart > 0 ? Math.round((expenseCategoriesForChart.Shopping / totalCategoryExpenseForChart) * 100) : 0}%`;
-        document.getElementById('miscPct').textContent = `${totalCategoryExpenseForChart > 0 ? Math.round((expenseCategoriesForChart.Misc / totalCategoryExpenseForChart) * 100) : 0}%`;
-
-
-        const ctx = document.getElementById('expenseChart');
-        if (ctx) {
-            if (window.expenseChartInstance) {
-                window.expenseChartInstance.destroy();
+            const progressCircle = document.querySelector('.progress-ring-progress');
+            if (progressCircle) {
+                progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+                progressCircle.style.strokeDashoffset = progressOffset;
+                progressCircle.style.stroke = progressColor;
             }
-            const chartColors = [
-                getComputedStyle(document.documentElement).getPropertyValue('--accent-green').trim(),
-                getComputedStyle(document.documentElement).getPropertyValue('--accent-red').trim(),
-                getComputedStyle(document.documentElement).getPropertyValue('--accent-orange').trim(),
-                getComputedStyle(document.documentElement).getPropertyValue('--accent-blue').trim()
-            ];
-            window.expenseChartInstance = new Chart(ctx.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: categoryNames,
-                    datasets: [{
-                        data: categoryAmounts,
-                        backgroundColor: chartColors,
-                        borderColor: 'var(--card-bg)',
-                        borderWidth: 4,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '80%',
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) { label += ': '; }
-                                    if (context.parsed !== null) { label += formatCurrency(context.parsed); }
-                                    return label;
+
+            // Update category percentages for dashboard
+            const sortedExpenseCategories = Object.keys(expenseCategoriesForChart).sort();
+            const categoryAmounts = sortedExpenseCategories.map(cat => expenseCategoriesForChart[cat]);
+            const totalCategoryExpenseForChart = categoryAmounts.reduce((sum, amount) => sum + amount, 0);
+
+            // Dynamically update category percentages based on available IDs
+            document.querySelectorAll('[id$="Pct"]').forEach(element => {
+                const categoryId = element.id.replace('Pct', '');
+                const amount = expenseCategoriesForChart[categoryId];
+                if (amount !== undefined) {
+                    element.textContent = `${totalCategoryExpenseForChart > 0 ? Math.round((amount / totalCategoryExpenseForChart) * 100) : 0}%`;
+                }
+            });
+
+
+            // Update the chart
+            const ctx = document.getElementById('expenseChart');
+            if (ctx) {
+                if (window.expenseChartInstance) {
+                    window.expenseChartInstance.destroy();
+                }
+                const chartColors = [
+                    getComputedStyle(document.documentElement).getPropertyValue('--accent-green').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--accent-red').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--accent-orange').trim(),
+                    getComputedStyle(document.documentElement).getPropertyValue('--accent-blue').trim(),
+                    // Add more colors if you expect more categories
+                    '#8a2be2', // BlueViolet
+                    '#ff4500'  // OrangeRed
+                ];
+
+                // Filter out categories with 0 amount for chart display if desired
+                const chartLabels = [];
+                const chartData = [];
+                let colorIndex = 0;
+                const activeChartColors = [];
+
+                sortedExpenseCategories.forEach(category => {
+                    const amount = expenseCategoriesForChart[category];
+                    if (amount > 0) {
+                        chartLabels.push(category);
+                        chartData.push(amount);
+                        activeChartColors.push(chartColors[colorIndex % chartColors.length]);
+                        colorIndex++;
+                    }
+                });
+
+                window.expenseChartInstance = new Chart(ctx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            data: chartData,
+                            backgroundColor: activeChartColors,
+                            borderColor: 'var(--card-bg)',
+                            borderWidth: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '80%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) { label += ': '; }
+                                        if (context.parsed !== null) { label += formatCurrency(context.parsed); }
+                                        return label;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            });
+                });
+            }
+
+        } catch (error) {
+            console.error('Error fetching or processing CSV for dashboard:', error);
+            if (document.getElementById('netExpenseValue')) document.getElementById('netExpenseValue').textContent = '₱ Error';
+            if (document.getElementById('remainingBalanceAmount')) document.getElementById('remainingBalanceAmount').textContent = '₱ Error';
         }
     }
 
     // --- Transactions Page Specific Logic (transactions.html) ---
-    // Renamed allTransactionsData to allFetchedData as it's the same data source now
-    // let allTransactionsData = []; // Store all fetched data for consistent filtering
+    // allTransactionsData is replaced by allFetchedData, so this global variable is no longer needed
+    // let allTransactionsData = [];
 
     async function fetchAndProcessTransactions() {
-        if (!document.getElementById('transactions-page')) return; // Only run if on transactions page
+        if (!document.getElementById('transactions-page')) return;
 
         try {
-            const response = await fetch(CSV_URL);
-            const csv = await response.text();
-            allFetchedData = parseCSV(csv); // Store raw data in the shared variable
+            const data = await fetchData(); // Use the shared fetchData function
 
             // Populate category filter dropdown
             populateCategoryFilter();
@@ -245,8 +313,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileDateDisplay.innerHTML = `<span>${monthName}</span><span>${dayOfMonth}</span>`;
             }
 
-            // Initial render of transactions for the current month.
-            // This is the point where the transactions page will load data on reload.
             renderTransactions(currentMonth);
 
         } catch (error) {
@@ -265,11 +331,10 @@ document.addEventListener('DOMContentLoaded', () => {
         categoryFilterDropdown.innerHTML = '<option value="">All Categories</option>';
 
         const uniqueCategories = new Set();
-        allFetchedData.forEach(entry => { // Use allFetchedData here
+        allFetchedData.forEach(entry => {
             if (entry['What kind?']) {
                 uniqueCategories.add(entry['What kind?'].trim());
             }
-            // Explicitly add "Salary" and "Allowance" if they are specific gain types
             if (entry.Type && entry.Type.toLowerCase() === 'gains' && entry['What kind?'].trim() === 'Salary') {
                 uniqueCategories.add('Salary');
             }
@@ -281,7 +346,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const sortedCategories = Array.from(uniqueCategories).sort();
         const finalCategories = [];
 
-        // Add "Gains" and "Expenses" at the top if relevant
         const hasGains = allFetchedData.some(entry => entry.Type && entry.Type.toLowerCase() === 'gains');
         const hasExpenses = allFetchedData.some(entry => entry.Type && entry.Type.toLowerCase() === 'expenses');
 
@@ -290,13 +354,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         sortedCategories.forEach(cat => {
             const lowerCat = cat.toLowerCase();
-            // Avoid adding "Gains" or "Expenses" or specific gain types like "Salary" or "Allowance" again if they are already handled as top-level filters.
             if (lowerCat !== 'gains' && lowerCat !== 'expenses' && lowerCat !== 'salary' && lowerCat !== 'allowance' && !finalCategories.includes(cat)) {
                 finalCategories.push(cat);
             }
         });
 
-        // Re-sort the final categories to put 'Gains' and 'Expenses' first, then others alphabetically
         finalCategories.sort((a, b) => {
             if (a === 'Gains') return -1;
             if (b === 'Gains') return 1;
@@ -304,7 +366,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (b === 'Expenses') return 1;
             return a.localeCompare(b);
         });
-
 
         finalCategories.forEach(category => {
             if (category) {
@@ -316,7 +377,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-
     function renderTransactions(selectedMonth, selectedCategory = '', startDate = null, endDate = null) {
         const transactionsListDiv = document.getElementById('transactionsList');
         if (!transactionsListDiv) return;
@@ -327,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const entryType = entry.Type ? entry.Type.toLowerCase() : '';
             const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : ''; // Corrected property name
 
-            if (isNaN(amount) || isNaN(date.getTime()) || !entryType) { // Use .getTime() for valid date check
+            if (isNaN(amount) || isNaN(date.getTime()) || !entryType) {
                 console.warn('Skipping malformed entry:', entry);
                 return false;
             }
@@ -335,17 +395,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const entryDate = new Date(entry.Date);
             entryDate.setHours(0, 0, 0, 0);
 
-            // Month filtering (always apply if a month is specified, UNLESS custom dates are present)
-            if (selectedMonth !== null && !(startDate || endDate)) { // Only apply month filter if no custom dates
+            if (selectedMonth !== null && !(startDate || endDate)) {
                 if (entryDate.getMonth() + 1 !== selectedMonth) {
                     return false;
                 }
             }
 
-            // Category filtering
             if (selectedCategory) {
                 const lowerCaseSelectedCategory = selectedCategory.toLowerCase();
-                const actualCategory = entry['What kind?'] ? entry['What kind?'].toLowerCase() : '';
+                const actualCategory = entry['What kind?'] ? entry['What kind?'].toLowerCase() : ''; // Corrected property name
                 const entryCategoryType = entry.Type ? entry.Type.toLowerCase() : '';
 
                 if (lowerCaseSelectedCategory === 'gains') {
@@ -357,7 +415,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Date range filtering
             if (startDate && endDate) {
                 const start = new Date(startDate);
                 start.setHours(0, 0, 0, 0);
@@ -372,7 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return true;
         });
 
-        filteredData.sort((a, b) => new Date(b.Date) - new Date(a.Date)); // Sort by date descending
+        filteredData.sort((a, b) => new Date(b.Date) - new Date(a.Date));
 
         transactionsListDiv.innerHTML = '';
 
@@ -409,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (b === 'Yesterday') return 1;
             const dateA = new Date(a);
             const dateB = new Date(b);
-            if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) { // Use .getTime() for valid date check
+            if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
                 return dateB - dateA;
             }
             return 0;
@@ -439,7 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const categoryIconDiv = document.createElement('div');
                 categoryIconDiv.classList.add('transaction-category-icon');
 
-                const { category: mappedCategory, icon: categoryIcon } = mapCategoryAndIcon(entry.Type, entry['What kind?']); // Corrected property name
+                const { category: mappedCategory, icon: categoryIcon } = mapCategoryAndIcon(entry.Type, entry['What kind?']);
 
                 if (entry.Type && entry.Type.toLowerCase() === 'gains') {
                      categoryIconDiv.classList.add('category-gain');
@@ -460,20 +517,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const nameSpan = document.createElement('span');
                 nameSpan.classList.add('transaction-name');
-                nameSpan.textContent = entry.Description && entry.Description.trim() !== '' ? entry.Description : (entry['What kind?'] && entry['What kind?'].trim() !== '' ? entry['What kind?'] : 'N/A'); // Corrected property name
+                nameSpan.textContent = entry.Description && entry.Description.trim() !== '' ? entry.Description : (entry['What kind?'] && entry['What kind?'].trim() !== '' ? entry['What kind?'] : 'N/A');
                 detailsDiv.appendChild(nameSpan);
 
                 const timeSpan = document.createElement('span');
                 timeSpan.classList.add('transaction-time');
-                // Format time to AM/PM if needed, assuming entry.Time is 'HH:MM:SS' or 'HH:MM'
                 if (entry.Time) {
                     try {
                         const [hours, minutes, seconds] = entry.Time.split(':').map(Number);
-                        const date = new Date(); // Use a dummy date to format time
+                        const date = new Date();
                         date.setHours(hours, minutes, seconds || 0);
                         timeSpan.textContent = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
                     } catch (e) {
-                        timeSpan.textContent = entry.Time; // Fallback if parsing fails
+                        timeSpan.textContent = entry.Time;
                     }
                 } else {
                     timeSpan.textContent = '';
@@ -512,11 +568,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (document.getElementById('dashboard-page')) {
+        // Get dashboard filter elements
+        const dashboardStartDateInput = document.getElementById('dashboardStartDate');
+        const dashboardEndDateInput = document.getElementById('dashboardEndDate');
+        const applyDashboardFiltersButton = document.getElementById('applyDashboardFilters');
+        const clearDashboardFiltersButton = document.getElementById('clearDashboardFilters');
+
+        // Initial render for dashboard (no filters applied by default on load)
         updateDashboard();
+
+        // Event listener for apply dashboard filters
+        if (applyDashboardFiltersButton) {
+            applyDashboardFiltersButton.addEventListener('click', () => {
+                const startDate = dashboardStartDateInput.value;
+                const endDate = dashboardEndDateInput.value;
+                updateDashboard(startDate, endDate);
+            });
+        }
+
+        // Event listener for clear dashboard filters
+        if (clearDashboardFiltersButton) {
+            clearDashboardFiltersButton.addEventListener('click', () => {
+                dashboardStartDateInput.value = '';
+                dashboardEndDateInput.value = '';
+                updateDashboard(); // Call without filters to show all data
+            });
+        }
+
     } else if (document.getElementById('transactions-page')) {
-        // Transactions page initialization and event listeners moved inside here
         const today = new Date();
-        let currentMonth = today.getMonth() + 1; // Default to current month
+        let currentMonth = today.getMonth() + 1;
 
         const filterButton = document.getElementById('filterButton');
         const filterOptionsContainer = document.getElementById('filterOptionsContainer');
@@ -525,42 +606,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const endDateInput = document.getElementById('endDateInput');
         const applyFiltersButton = document.getElementById('applyFiltersButton');
         const clearFiltersButton = document.getElementById('clearFiltersButton');
-        const monthButtons = document.querySelectorAll('.month-button'); // Also defined here
+        const monthButtons = document.querySelectorAll('.month-button');
 
-        // Event listener for main Filter button (toggle visibility)
         if (filterButton) {
             filterButton.addEventListener('click', () => {
                 filterOptionsContainer.style.display = filterOptionsContainer.style.display === 'flex' ? 'none' : 'flex';
             });
         }
 
-        // Apply Filters button click
         if (applyFiltersButton) {
             applyFiltersButton.addEventListener('click', () => {
                 const selectedCategory = categoryFilterDropdown.value;
                 const startDate = startDateInput.value;
                 const endDate = endDateInput.value;
 
-                // Get the currently active month button's month value
                 const activeMonthButton = document.querySelector('.month-button.active');
                 currentMonth = activeMonthButton ? parseInt(activeMonthButton.dataset.month) : null;
 
-                // If custom dates are selected, override month filter
                 const finalMonth = (startDate || endDate) ? null : currentMonth;
 
                 renderTransactions(finalMonth, selectedCategory, startDate, endDate);
-                filterOptionsContainer.style.display = 'none'; // Hide filters after applying
+                filterOptionsContainer.style.display = 'none';
             });
         }
 
-        // Clear Filters button click
         if (clearFiltersButton) {
             clearFiltersButton.addEventListener('click', () => {
                 categoryFilterDropdown.value = '';
                 startDateInput.value = '';
                 endDateInput.value = '';
 
-                // Re-activate current month button and re-render
                 const today = new Date();
                 currentMonth = today.getMonth() + 1;
                 monthButtons.forEach(btn => btn.classList.remove('active'));
@@ -568,21 +643,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (currentMonthBtn) {
                     currentMonthBtn.classList.add('active');
                 }
-                renderTransactions(currentMonth); // Render with only current month filter
-                filterOptionsContainer.style.display = 'none'; // Hide filters
+                renderTransactions(currentMonth);
+                filterOptionsContainer.style.display = 'none';
             });
         }
 
-        // Set initial active month button (on page load for transactions)
         monthButtons.forEach(button => {
             if (parseInt(button.dataset.month) === currentMonth) {
                 button.classList.add('active');
             } else {
-                button.classList.remove('active'); // Ensure only current month is active on load
+                button.classList.remove('active');
             }
         });
 
-        // Set date in profile icon on transactions page
         const profileDateDisplay = document.getElementById('profileDateDisplay');
         if (profileDateDisplay) {
             const monthName = today.toLocaleDateString('en-US', { month: 'short' });
@@ -590,22 +663,19 @@ document.addEventListener('DOMContentLoaded', () => {
             profileDateDisplay.innerHTML = `<span>${monthName}</span><span>${dayOfMonth}</span>`;
         }
 
-        // Add event listeners for month buttons
         monthButtons.forEach(button => {
             button.addEventListener('click', function() {
                 monthButtons.forEach(btn => btn.classList.remove('active'));
                 this.classList.add('active');
-                currentMonth = parseInt(this.dataset.month); // Update currentMonth
-                // Clear custom date filters when a month is selected
+                currentMonth = parseInt(this.dataset.month);
                 startDateInput.value = '';
                 endDateInput.value = '';
-                categoryFilterDropdown.value = ''; // Clear category filter too
+                categoryFilterDropdown.value = '';
                 renderTransactions(currentMonth);
-                filterOptionsContainer.style.display = 'none'; // Hide filters after month selection
+                filterOptionsContainer.style.display = 'none';
             });
         });
 
-        // Initial data fetch and render for transactions page
         fetchAndProcessTransactions();
     }
 });
