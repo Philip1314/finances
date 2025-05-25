@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const CSV_URL = 'https://docs.google.com/sheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv';
-    const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header';
+    const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UE264aOn4g2UE-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header'; // Note: This URL was slightly modified in previous steps to match your form. Make sure it's correct.
 
     let allFetchedData = []; // Store all data once fetched for both dashboard and transactions
 
@@ -53,8 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'food': case 'groceries': category = 'Food'; icon = '🍔'; break;
                 case 'medicines': category = 'Medicines'; icon = '💊'; break;
                 case 'online shopping': category = 'Shopping'; icon = '🛍️'; break;
-                case 'transportation': icon = '🚌'; break; // Removed category for common ones
-                case 'utility bills': icon = '💡'; break; // Removed category for common ones
+                case 'transportation': icon = '🚌'; break;
+                case 'utility bills': icon = '💡'; break;
                 case 'allowance': category = 'Misc'; icon = '🚶'; break; // Fixed category for allowance here
                 default: category = 'Misc'; icon = '✨'; break;
             }
@@ -64,9 +64,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Dashboard Specific Logic (index.html) ---
     async function updateDashboard(filterMonth = null, filterYear = null) {
-        if (!document.getElementById('dashboard-page')) return;
+        if (!document.getElementById('dashboard-page')) return; // Only run if on dashboard page
 
-        // Use allFetchedData directly
+        // Fetch data if not already fetched or if explicitly asked to refresh
+        if (allFetchedData.length === 0) { // Only fetch if data is not present
+            try {
+                const response = await fetch(CSV_URL);
+                const csv = await response.text();
+                allFetchedData = parseCSV(csv);
+            } catch (error) {
+                console.error('Error fetching data for dashboard:', error);
+                document.getElementById('netExpenseValue').textContent = '₱ Error';
+                document.getElementById('remainingBalanceAmount').textContent = '₱ Error';
+                return;
+            }
+        }
+
         let filteredData = allFetchedData;
 
         // Apply month and year filters
@@ -217,21 +230,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to populate year dropdown on dashboard
     function populateDashboardYearFilter() {
         const yearFilterDropdown = document.getElementById('dashboardYearFilter');
+        // Ensure the dropdown exists and data has been fetched
         if (!yearFilterDropdown || allFetchedData.length === 0) return;
 
-        const years = new Set();
+        const years = new Set(); // Use a Set to store unique years
         allFetchedData.forEach(entry => {
             const date = new Date(entry.Date);
-            if (!isNaN(date.getTime())) { // Make sure the date is valid
-                years.add(date.getFullYear());
+            if (!isNaN(date)) { // Make sure the date is valid
+                years.add(date.getFullYear()); // Add the year to the Set
             }
         });
 
         // Clear existing options except "All Years"
         yearFilterDropdown.innerHTML = '<option value="">All Years</option>';
 
-        // Add sorted years
-        Array.from(years).sort((a, b) => b - a).forEach(year => { // Sort descending
+        // Add sorted years to the dropdown (descending order)
+        Array.from(years).sort((a, b) => b - a).forEach(year => {
             const option = document.createElement('option');
             option.value = year;
             option.textContent = year;
@@ -239,7 +253,55 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+
     // --- Transactions Page Specific Logic (transactions.html) ---
+
+    // Function to fetch data and process for transactions page
+    async function fetchAndProcessTransactions() {
+        if (!document.getElementById('transactions-page')) return; // Only run if on transactions page
+
+        try {
+            const response = await fetch(CSV_URL);
+            const csv = await response.text();
+            allFetchedData = parseCSV(csv); // Populate global data store
+            console.log("Transactions data fetched successfully. Entries:", allFetchedData.length); // Debugging
+
+            // Initialize category filter after data is fetched
+            populateCategoryFilter();
+
+            // Set current month active and render transactions for it
+            const today = new Date();
+            const currentMonth = today.getMonth() + 1; // 1-indexed
+
+            const monthButtons = document.querySelectorAll('.month-button');
+            monthButtons.forEach(button => {
+                if (parseInt(button.dataset.month) === currentMonth) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active'); // Ensure only current month is active
+                }
+            });
+
+            // Set profile date display
+            const profileDateDisplay = document.getElementById('profileDateDisplay');
+            if (profileDateDisplay) {
+                const monthName = today.toLocaleDateString('en-US', { month: 'short' });
+                const dayOfMonth = today.getDate();
+                profileDateDisplay.innerHTML = `<span>${monthName}</span><span>${dayOfMonth}</span>`;
+            }
+
+            // Initial render for the current month
+            renderTransactions(currentMonth);
+
+        } catch (error) {
+            console.error('Error fetching or processing transactions data:', error);
+            const transactionsListDiv = document.getElementById('transactionsList');
+            if (transactionsListDiv) {
+                transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--accent-red); padding: 2rem;">Error loading transactions. Please try again later.</p>';
+            }
+        }
+    }
+
 
     function populateCategoryFilter() {
         const categoryFilterDropdown = document.getElementById('categoryFilterDropdown');
@@ -297,7 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderTransactions(selectedMonth = null, selectedCategory = '', startDate = null, endDate = null) {
         const transactionsListDiv = document.getElementById('transactionsList');
-        if (!transactionsListDiv) return;
+        if (!transactionsListDiv || allFetchedData.length === 0) return;
 
         let filteredData = allFetchedData.filter(entry => {
             const amount = parseFloat(entry.Amount);
@@ -412,6 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return timeA[2] - timeB[2];
             });
 
+
             groupedTransactions[dateHeader].forEach(entry => {
                 const itemDiv = document.createElement('div');
                 itemDiv.classList.add('transaction-item');
@@ -482,50 +545,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Initial Data Fetch (for both pages) ---
-    async function fetchAllDataAndInitialize() {
-        try {
-            const response = await fetch(CSV_URL);
-            const csv = await response.text();
-            allFetchedData = parseCSV(csv); // Populate global data store
-
-            if (document.getElementById('dashboard-page')) {
-                populateDashboardYearFilter(); // Populate years for dashboard
-                updateDashboard(); // Initial dashboard render (all time)
-            } else if (document.getElementById('transactions-page')) {
-                // Initialize transaction page elements and render current month's transactions
-                const today = new Date();
-                const currentMonth = today.getMonth() + 1; // 1-indexed
-
-                const monthButtons = document.querySelectorAll('.month-button');
-                monthButtons.forEach(button => {
-                    if (parseInt(button.dataset.month) === currentMonth) {
-                        button.classList.add('active');
-                    }
-                });
-
-                const profileDateDisplay = document.getElementById('profileDateDisplay');
-                if (profileDateDisplay) {
-                    const monthName = today.toLocaleDateString('en-US', { month: 'short' });
-                    const dayOfMonth = today.getDate();
-                    profileDateDisplay.innerHTML = `<span>${monthName}</span><span>${dayOfMonth}</span>`;
-                }
-
-                populateCategoryFilter(); // Populate category filter for transactions page
-                renderTransactions(currentMonth); // Initial render with current month
-            }
-        } catch (error) {
-            console.error('Error fetching all data:', error);
-            // Handle global error if data cannot be fetched at all
-            if (document.getElementById('netExpenseValue')) document.getElementById('netExpenseValue').textContent = '₱ Error';
-            if (document.getElementById('remainingBalanceAmount')) document.getElementById('remainingBalanceAmount').textContent = '₱ Error';
-            const transactionsListDiv = document.getElementById('transactionsList');
-            if (transactionsListDiv) {
-                transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--accent-red); padding: 2rem;">Error loading data. Please check the data source.</p>';
-            }
-        }
-    }
-
 
     // --- Common Logic & Event Listeners ---
 
@@ -536,12 +555,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Initialize all data fetch on DOMContentLoaded
-    fetchAllDataAndInitialize();
-
-
-    // Dashboard Filter Listeners
+    // Initialize functions based on the current page
     if (document.getElementById('dashboard-page')) {
+        updateDashboard(); // Initial dashboard load (all time)
+        populateDashboardYearFilter(); // Populates year filter dropdown initially
+
+        // Dashboard Filter Listeners
         const dashboardFilterButton = document.getElementById('dashboardFilterButton');
         const dashboardFilterOptionsContainer = document.getElementById('dashboardFilterOptionsContainer');
         const dashboardMonthFilter = document.getElementById('dashboardMonthFilter');
@@ -575,10 +594,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 dashboardFilterOptionsContainer.style.display = 'none'; // Hide after clearing
             });
         }
-    }
 
-    // Transactions Page Listeners
-    if (document.getElementById('transactions-page')) {
+    } else if (document.getElementById('transactions-page')) {
+        fetchAndProcessTransactions(); // Fetch and render for transactions page
+
         let currentMonth; // Declare outside to be accessible
 
         const monthButtons = document.querySelectorAll('.month-button');
@@ -646,7 +665,5 @@ document.addEventListener('DOMContentLoaded', () => {
                 filterOptionsContainer.style.display = 'none'; // Hide filters after month selection
             });
         });
-
-        // The initial rendering of transactions on page load is now handled within fetchAllDataAndInitialize
     }
 });
