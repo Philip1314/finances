@@ -253,13 +253,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const uniqueCategories = new Set();
         allTransactionsData.forEach(entry => {
-            if (entry['What kind?']) {
-                uniqueCategories.add(entry['What kind?'].trim());
+            if (entry['What kind?']) { // Corrected from 'What kind'
+                uniqueCategories.add(entry['What kind?'].trim()); // Corrected from 'What kind'
             }
-            if (entry.Type && entry.Type.toLowerCase() === 'gains' && entry['What kind?'].trim() === 'Salary') {
+            if (entry.Type && entry.Type.toLowerCase() === 'gains' && entry['What kind?'].trim() === 'Salary') { // Corrected from 'What kind'
                 uniqueCategories.add('Salary'); // Explicitly add Salary for gains
             }
-            if (entry.Type && entry.Type.toLowerCase() === 'gains' && entry['What kind?'].trim() === 'Allowance') {
+            if (entry.Type && entry.Type.toLowerCase() === 'gains' && entry['What kind?'].trim() === 'Allowance') { // Corrected from 'What kind'
                 uniqueCategories.add('Allowance'); // Explicitly add Allowance for gains
             }
         });
@@ -302,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const amount = parseFloat(entry.Amount);
             const date = new Date(entry.Date);
             const entryType = entry.Type ? entry.Type.toLowerCase() : '';
-            const entryWhatKind = entry['What kind'] ? entry['What kind'].toLowerCase() : ''; // Use 'What kind' here
+            const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : ''; // Corrected to 'What kind?'
 
             if (isNaN(amount) || isNaN(date) || !entryType) {
                 console.warn('Skipping malformed entry:', entry);
@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Category filtering
             if (selectedCategory) {
                 const lowerCaseSelectedCategory = selectedCategory.toLowerCase();
-                const actualCategory = entry['What kind'] ? entry['What kind'].toLowerCase() : '';
+                const actualCategory = entry['What kind?'] ? entry['What kind?'].toLowerCase() : ''; // Corrected to 'What kind?'
                 const entryCategoryType = entry.Type ? entry.Type.toLowerCase() : ''; // 'gains' or 'expenses'
 
                 if (lowerCaseSelectedCategory === 'gains') {
