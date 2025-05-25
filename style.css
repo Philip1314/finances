@@ -389,7 +389,7 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* --- Dashboard Filter Specific Styles --- */
+/* --- NEW Dashboard Filter Specific Styles --- */
 .dashboard-filter-options-container {
     display: none; /* Hidden by default */
     flex-direction: column;
@@ -493,8 +493,7 @@ body {
     transform: translateY(-1px);
 }
 
-
-/* --- Transactions Page Specific Styles (transactions.html) --- */
+/* --- NEW Transactions Page Specific Filter & Layout Styles --- */
 
 .transactions-container { /* This would be the .container for transactions.html */
     /* Shared styles with .container for consistent mobile framing */
