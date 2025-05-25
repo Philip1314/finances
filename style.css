@@ -383,7 +383,7 @@ body {
     background-color: #E0E0E0;
 }
 
-/* New Filter Options Container Styling */
+/* New Filter Options Container Styling (for transactions page) */
 .filter-options-container {
     background-color: var(--card-bg);
     border-radius: 12px;
@@ -395,6 +395,13 @@ body {
     gap: 15px; /* Space between filter groups */
 }
 
+/* Reusing .filter-card for dashboard's new filter card */
+.filter-card {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
 .filter-dropdown-group,
 .filter-date-group {
     display: flex;
@@ -402,14 +409,16 @@ body {
     gap: 8px;
 }
 
-.filter-options-container label {
+.filter-options-container label,
+.filter-card label { /* Apply label styles to dashboard filter card as well */
     font-size: 0.9rem;
     color: var(--text-dark);
     font-weight: 500;
 }
 
 .filter-options-container select,
-.filter-options-container input[type="date"] {
+.filter-options-container input[type="date"],
+.filter-card input[type="date"] { /* Apply input styles to dashboard filter card as well */
     width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--border-color);
