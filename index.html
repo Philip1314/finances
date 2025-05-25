@@ -11,12 +11,23 @@
 <body>
     <div class="container" id="dashboard-page">
         <header class="header">
-            <a href="#" class="back-arrow" style="visibility: hidden; opacity: 0;">&larr;</a>
+            <button class="hamburger-menu" id="dashboardFilterToggle">
+                &#9776; </button>
             <h1>Expense Manager</h1>
             <div class="profile-icon">P</div>
         </header>
 
         <main class="main-content">
+            <section class="card filter-card" id="dashboardFilterCard" style="display: none;">
+                <div class="filter-date-group">
+                    <label for="dashboardStartDateInput">Start Date:</label>
+                    <input type="date" id="dashboardStartDateInput">
+                    <label for="dashboardEndDateInput">End Date:</label>
+                    <input type="date" id="dashboardEndDateInput">
+                </div>
+                <button class="apply-filters-button" id="applyDashboardFiltersButton">Apply Filters</button>
+                <button class="clear-filters-button" id="clearDashboardFiltersButton">Clear Filters</button>
+            </section>
             <section class="card summary-card">
                 <div class="chart-container">
                     <canvas id="expenseChart"></canvas>
@@ -45,16 +56,6 @@
                 </div>
             </section>
 
-            <section class="card filter-card" id="dashboardFilterCard">
-                <div class="filter-date-group">
-                    <label for="dashboardStartDateInput">Start Date:</label>
-                    <input type="date" id="dashboardStartDateInput">
-                    <label for="dashboardEndDateInput">End Date:</label>
-                    <input type="date" id="dashboardEndDateInput">
-                </div>
-                <button class="apply-filters-button" id="applyDashboardFiltersButton">Apply Filters</button>
-                <button class="clear-filters-button" id="clearDashboardFiltersButton">Clear Filters</button>
-            </section>
             <section class="card limit-card">
                 <div class="limit-progress-wrapper">
                     <svg class="progress-circle" viewBox="0 0 80 80">
@@ -75,7 +76,7 @@
                     <h2>Transactions on your hands!</h2>
                     <a href="transactions.html" class="button">View All</a>
                 </div>
-                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpj4q0I_0ueCPz6ofi7pE8JMqJd_ZJr1bFP4aGIm0nRpDCVV-Sx52Z-pjW&s=10" alt="Card Illustration" class="card-illustration">
+                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpj4q0I_0ueCPz6ofi7pE8JMqId_ZJr1bFP4aGIm0nRpDCVV-Sx52Z-pjW&s=10" alt="Card Illustration" class="card-illustration">
             </section>
         </main>
     </div>
