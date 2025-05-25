@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv';
+    const CSV_URL = 'https://docs.google.com/sheets/d/e/2PACX-1vQgMFbI8pivLbRpc2nL2Gyoxw47PmXEVxvUDrjr-t86gj4-J3QM8uV7m8iJN9wxlYo3IY5FQqqUICei/pub?output=csv';
     const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSdrDJoOeo264aOn4g2UEe-K-FHpbssBAVmEtOWoW46Q1cwjgg/viewform?usp=header';
 
     let allFetchedData = []; // Store all data once fetched for both dashboard and transactions
@@ -53,9 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'food': case 'groceries': category = 'Food'; icon = '🍔'; break;
                 case 'medicines': category = 'Medicines'; icon = '💊'; break;
                 case 'online shopping': category = 'Shopping'; icon = '🛍️'; break;
-                case 'transportation': icon = '🚌'; break;
-                case 'utility bills': icon = '💡'; break;
-                case 'allowance': category = 'Misc'; icon = '🚶'; break;
+                case 'transportation': icon = '🚌'; break; // Removed category for common ones
+                case 'utility bills': icon = '💡'; break; // Removed category for common ones
+                case 'allowance': category = 'Misc'; icon = '🚶'; break; // Fixed category for allowance here
                 default: category = 'Misc'; icon = '✨'; break;
             }
         }
@@ -63,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Dashboard Specific Logic (index.html) ---
-    // Make updateDashboard accept filters
     async function updateDashboard(filterMonth = null, filterYear = null) {
         if (!document.getElementById('dashboard-page')) return;
 
@@ -74,6 +73,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (filterMonth !== null || filterYear !== null) {
             filteredData = filteredData.filter(entry => {
                 const date = new Date(entry.Date);
+                // Ensure date is valid before processing
+                if (isNaN(date.getTime())) return false;
+
                 const entryMonth = date.getMonth() + 1; // 1-indexed
                 const entryYear = date.getFullYear();
 
@@ -220,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const years = new Set();
         allFetchedData.forEach(entry => {
             const date = new Date(entry.Date);
-            if (!isNaN(date)) {
+            if (!isNaN(date.getTime())) { // Make sure the date is valid
                 years.add(date.getFullYear());
             }
         });
@@ -238,27 +240,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Transactions Page Specific Logic (transactions.html) ---
-    // Using allFetchedData from the global scope now
-    async function fetchAndProcessTransactions() {
-        try {
-            const response = await fetch(CSV_URL);
-            const csv = await response.text();
-            allFetchedData = parseCSV(csv); // Store raw data for both pages
-
-            // Populate category filter dropdown for transactions page
-            populateCategoryFilter();
-            // Initial render with current month for transactions page
-            const today = new Date();
-            const currentMonth = today.getMonth() + 1; // getMonth() is 0-indexed
-            renderTransactions(currentMonth); // Initial render with current month
-        } catch (error) {
-            console.error('Error fetching or processing CSV for transactions:', error);
-            const transactionsListDiv = document.getElementById('transactionsList');
-            if (transactionsListDiv) {
-                transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--accent-red); padding: 2rem;">Error loading transactions. Please check the data source.</p>';
-            }
-        }
-    }
 
     function populateCategoryFilter() {
         const categoryFilterDropdown = document.getElementById('categoryFilterDropdown');
@@ -274,33 +255,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         const sortedCategories = Array.from(uniqueCategories).sort();
-        const finalCategories = ['Gains', 'Expenses']; // Explicit top-level categories
+        const finalCategories = []; // Start with an empty array
+
+        // Add "Gains" and "Expenses" at the very top if they are relevant types
+        const hasGains = allFetchedData.some(entry => entry.Type && entry.Type.toLowerCase() === 'gains');
+        const hasExpenses = allFetchedData.some(entry => entry.Type && entry.Type.toLowerCase() === 'expenses');
+
+        if (hasGains) finalCategories.push('Gains');
+        if (hasExpenses) finalCategories.push('Expenses');
+
 
         sortedCategories.forEach(cat => {
+            // Add specific categories, excluding the generic 'Gains' or 'Expenses' if they are already added
+            // and avoiding duplicates
             const lowerCat = cat.toLowerCase();
-            // Add specific categories, avoiding duplicates with "Gains"/"Expenses" if already covered
-            if (!['salary', 'allowance', 'food', 'groceries', 'medicines', 'online shopping', 'transportation', 'utility bills'].includes(lowerCat) && !finalCategories.includes(cat)) {
-                 finalCategories.push(cat);
+            // Check if the specific category is directly "gains" or "expenses" which are already added as top-level
+            if (lowerCat !== 'gains' && lowerCat !== 'expenses' && !finalCategories.includes(cat)) {
+                finalCategories.push(cat);
             }
         });
 
-        // Ensure common ones are present if they exist in data but weren't caught by the general push
-        if (uniqueCategories.has('Food') && !finalCategories.includes('Food')) finalCategories.push('Food');
-        if (uniqueCategories.has('Medicines') && !finalCategories.includes('Medicines')) finalCategories.push('Medicines');
-        if (uniqueCategories.has('Online Shopping') && !finalCategories.includes('Online Shopping')) finalCategories.push('Online Shopping');
-        if (uniqueCategories.has('Transportation') && !finalCategories.includes('Transportation')) finalCategories.push('Transportation');
-        if (uniqueCategories.has('Utility Bills') && !finalCategories.includes('Utility Bills')) finalCategories.push('Utility Bills');
-
-
         finalCategories.sort((a, b) => {
-            // Keep Gains/Expenses at top, then sort alphabetically
+            // Keep Gains/Expenses at top, then sort alphabetically for others
             if (a === 'Gains') return -1;
             if (b === 'Gains') return 1;
             if (a === 'Expenses') return -1;
             if (b === 'Expenses') return 1;
             return a.localeCompare(b);
         });
-
 
         finalCategories.forEach(category => {
             if (category) {
@@ -321,9 +303,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const amount = parseFloat(entry.Amount);
             const date = new Date(entry.Date);
             const entryType = entry.Type ? entry.Type.toLowerCase() : '';
-            const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : '';
+            const entryWhatKind = entry['What kind?'] ? entry['What kind?'].toLowerCase() : ''; // Use 'What kind?' here
 
-            if (isNaN(amount) || isNaN(date) || !entryType) {
+            if (isNaN(amount) || isNaN(date.getTime()) || !entryType) { // Check for valid date
                 console.warn('Skipping malformed entry:', entry);
                 return false;
             }
@@ -368,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return true;
         });
 
-        filteredData.sort((a, b) => new Date(b.Date) - new Date(a.Date));
+        filteredData.sort((a, b) => new Date(b.Date) - new Date(a.Date)); // Sort by date descending
 
         transactionsListDiv.innerHTML = '';
 
@@ -405,10 +387,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (b === 'Yesterday') return 1;
             const dateA = new Date(a);
             const dateB = new Date(b);
-            if (!isNaN(dateA) && !isNaN(dateB)) {
+            // Handle cases where date conversion might fail for 'Today'/'Yesterday' strings
+            if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
                 return dateB - dateA;
             }
-            return 0;
+            return 0; // Maintain original order if dates are not valid
         });
 
         sortedDates.forEach(dateHeader => {
@@ -423,6 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
             groupedTransactions[dateHeader].sort((a, b) => {
                 const timeA = a.Time ? a.Time.split(':').map(Number) : [0, 0, 0];
                 const timeB = b.Time ? b.Time.split(':').map(Number) : [0, 0, 0];
+                // Compare hours, then minutes, then seconds
                 if (timeA[0] !== timeB[0]) return timeA[0] - timeB[0];
                 if (timeA[1] !== timeB[1]) return timeA[1] - timeB[1];
                 return timeA[2] - timeB[2];
@@ -461,7 +445,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const timeSpan = document.createElement('span');
                 timeSpan.classList.add('transaction-time');
-                timeSpan.textContent = entry.Time || '';
+                // Format time to AM/PM if needed, assuming entry.Time is 'HH:MM:SS' or 'HH:MM'
+                if (entry.Time) {
+                    try {
+                        const [hours, minutes, seconds] = entry.Time.split(':').map(Number);
+                        const date = new Date(); // Use a dummy date to format time
+                        date.setHours(hours, minutes, seconds || 0);
+                        timeSpan.textContent = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+                    } catch (e) {
+                        timeSpan.textContent = entry.Time; // Fallback if parsing fails
+                    }
+                } else {
+                    timeSpan.textContent = '';
+                }
                 detailsDiv.appendChild(timeSpan);
 
                 itemDiv.appendChild(detailsDiv);
@@ -497,8 +493,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 populateDashboardYearFilter(); // Populate years for dashboard
                 updateDashboard(); // Initial dashboard render (all time)
             } else if (document.getElementById('transactions-page')) {
-                // Initial fetch for transactions page is already set up in fetchAndProcessTransactions
-                // So, no need to call it again here. Just let the existing logic handle it.
+                // Initialize transaction page elements and render current month's transactions
+                const today = new Date();
+                const currentMonth = today.getMonth() + 1; // 1-indexed
+
+                const monthButtons = document.querySelectorAll('.month-button');
+                monthButtons.forEach(button => {
+                    if (parseInt(button.dataset.month) === currentMonth) {
+                        button.classList.add('active');
+                    }
+                });
+
+                const profileDateDisplay = document.getElementById('profileDateDisplay');
+                if (profileDateDisplay) {
+                    const monthName = today.toLocaleDateString('en-US', { month: 'short' });
+                    const dayOfMonth = today.getDate();
+                    profileDateDisplay.innerHTML = `<span>${monthName}</span><span>${dayOfMonth}</span>`;
+                }
+
+                populateCategoryFilter(); // Populate category filter for transactions page
+                renderTransactions(currentMonth); // Initial render with current month
             }
         } catch (error) {
             console.error('Error fetching all data:', error);
@@ -565,22 +579,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Transactions Page Listeners
     if (document.getElementById('transactions-page')) {
-        const today = new Date();
-        let currentMonth = today.getMonth() + 1;
+        let currentMonth; // Declare outside to be accessible
 
         const monthButtons = document.querySelectorAll('.month-button');
-        monthButtons.forEach(button => {
-            if (parseInt(button.dataset.month) === currentMonth) {
-                button.classList.add('active');
-            }
-        });
-
-        const profileDateDisplay = document.getElementById('profileDateDisplay');
-        if (profileDateDisplay) {
-            const monthName = today.toLocaleDateString('en-US', { month: 'short' });
-            const dayOfMonth = today.getDate();
-            profileDateDisplay.innerHTML = `<span>${monthName}</span><span>${dayOfMonth}</span>`;
-        }
 
         // Transactions page filter elements
         const filterButton = document.getElementById('filterButton');
@@ -604,11 +605,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const endDate = endDateInput.value;
 
                 const activeMonthButton = document.querySelector('.month-button.active');
-                const selectedMonth = activeMonthButton ? parseInt(activeMonthButton.dataset.month) : null;
+                // If a month button is active, use its value, otherwise null
+                const selectedMonthFromButton = activeMonthButton ? parseInt(activeMonthButton.dataset.month) : null;
 
-                const finalMonth = (startDate || endDate) ? null : selectedMonth; // If dates are present, ignore month button filter
+                // If custom dates are selected, override month filter
+                const finalMonthFilter = (startDate || endDate) ? null : selectedMonthFromButton;
 
-                renderTransactions(finalMonth, selectedCategory, startDate, endDate);
+                renderTransactions(finalMonthFilter, selectedCategory, startDate, endDate);
                 filterOptionsContainer.style.display = 'none';
             });
         }
@@ -620,13 +623,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 endDateInput.value = '';
 
                 const today = new Date();
-                currentMonth = today.getMonth() + 1;
+                currentMonth = today.getMonth() + 1; // Reset to current month
                 monthButtons.forEach(btn => btn.classList.remove('active'));
                 const currentMonthBtn = document.querySelector(`.month-button[data-month="${currentMonth}"]`);
                 if (currentMonthBtn) {
                     currentMonthBtn.classList.add('active');
                 }
-                renderTransactions(currentMonth);
+                renderTransactions(currentMonth); // Render with only current month filter
                 filterOptionsContainer.style.display = 'none';
             });
         }
@@ -636,14 +639,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 monthButtons.forEach(btn => btn.classList.remove('active'));
                 this.classList.add('active');
                 currentMonth = parseInt(this.dataset.month);
-                startDateInput.value = '';
-                endDateInput.value = '';
-                categoryFilterDropdown.value = '';
+                startDateInput.value = ''; // Clear custom date filters
+                endDateInput.value = '';    // Clear custom date filters
+                categoryFilterDropdown.value = ''; // Clear category filter too
                 renderTransactions(currentMonth);
-                filterOptionsContainer.style.display = 'none';
+                filterOptionsContainer.style.display = 'none'; // Hide filters after month selection
             });
         });
-        // Initial fetch for transactions page will happen when fetchAllDataAndInitialize is called
-        // and its success callback will populate categories and render transactions.
+
+        // The initial rendering of transactions on page load is now handled within fetchAllDataAndInitialize
     }
 });
