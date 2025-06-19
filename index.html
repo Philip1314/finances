@@ -40,7 +40,6 @@
             <button class="month-button" data-month="10">Oct</button>
             <button class="month-button" data-month="11">Nov</button>
             <button class="month-button" data-month="12">Dec</button>
-            <button class="month-button" data-month="All">All</button>
         </nav>
 
         <main class="main-content">
@@ -57,104 +56,55 @@
                     </div>
                 </div>
                 <div class="legend">
-                    <div class="legend-item">
-                        <span class="dot food"></span>
-                        Food<span id="foodPct">0%</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="dot medicines"></span>
-                        Medicines<span id="medicinesPct">0%</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="dot shopping"></span>
-                        Shopping<span id="shoppingPct">0%</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="dot misc"></span>
-                        Misc<span id="miscPct">0%</span>
-                    </div>
+                    <div class="legend-item"><span class="dot food"></span>Food <span id="foodPct">0%</span></div>
+                    <div class="legend-item"><span class="dot medicines"></span>Medicines <span id="medicinesPct">0%</span></div>
+                    <div class="legend-item"><span class="dot shopping"></span>Shopping <span id="shoppingPct">0%</span></div>
+                    <div class="legend-item"><span class="dot misc"></span>Misc <span id="miscPct">0%</span></div>
                 </div>
             </section>
 
             <section class="card limit-card">
                 <div class="limit-progress-wrapper">
                     <svg class="progress-circle" viewBox="0 0 80 80">
-                        <circle class="progress-ring-track" r="34" cx="40" cy="40"></circle>
-                        <circle class="progress-ring-progress" r="34" cx="40" cy="40"></circle>
+                        <circle class="progress-ring-track" cx="40" cy="40" r="34"></circle>
+                        <circle class="progress-ring-progress" cx="40" cy="40" r="34"></circle>
                     </svg>
-                    <span class="progress-text" id="remainingBalancePct">...</span>
+                    <span class="progress-text" id="remainingBalancePct">0%</span>
                 </div>
                 <div class="limit-details">
-                    <h3>Remaining Balance</h3>
-                    <p id="remainingBalanceAmount">₱ 0.00 of ₱ 0.00</p>
+                    <div class="limit-title">Remaining Balance</div>
+                    <div class="limit-amount" id="remainingBalanceAmount">₱ 0.00 of ₱ 0.00</div>
                 </div>
+                <a href="transactions.html" class="arrow-link">&#8594;</a>
             </section>
 
             <section class="card savings-card">
                 <div class="promo-text">
                     <h2>Total Savings</h2>
                     <div class="amount-and-button-wrapper">
-                        <p class="savings-amount" id="savingsAmount">₱ ●●●,●●●.●●</p>
+                        <span class="savings-amount" id="savingsAmount">₱ ●●●,●●●.●●</span>
                         <button class="mask-button" id="maskSavingsButton">Show</button>
                     </div>
-                    <a href="savings.html" class="button view-savings-button">View Savings History</a>
+                    <button class="button button-white" onclick="location.href='savings.html'">View Savings</button>
                 </div>
-                <img src="https://assets-global.website-files.com/65365519e48ad68972986420/65365519e48ad6897298646b_image%20(5).png" alt="Savings Illustration" class="card-illustration">
+                <div class="promo-icon">
+                    <img src="https://via.placeholder.com/60" alt="Piggy Bank" style="width:60px;height:60px;border-radius:50%;">
+                </div>
             </section>
 
-            <section class="card transaction-list-card">
-                <h2>Transactions for <span id="currentDashboardMonthName">This Month</span></h2>
-                <div id="dashboardTransactionsList">
-                    </div>
-                <div class="pagination-controls" id="dashboardTransactionsPagination">
-                    </div>
-            </section>
-
+            <button class="fab fab-calculator" id="openCalculatorButton">
+                <img src="https://cdn-icons-png.flaticon.com/512/2620/2620464.png" alt="Calculator">
+            </button>
+             <button class="fab fab-add" id="openFormButton">
+                <img src="https://www.svgrepo.com/show/301596/add-round-button.svg" alt="Add Transaction">
+            </button>
         </main>
 
-        <div class="filter-modal-overlay" id="filterModalOverlay">
-            <div class="filter-modal-content">
-                <div class="filter-modal-header">
-                    <h2>Filter Chart Data</h2>
-                    <button class="close-filter-modal-button" id="closeFilterModalButton">&times;</button>
+        <div class="calculator-modal" id="calculatorModal">
+            <div class="calculator-content">
+                <div class="calculator-display">
+                    <input type="text" id="calculatorInput" value="0" readonly>
                 </div>
-                <div class="filter-modal-body">
-                    <div class="filter-group">
-                        <label for="filterMonth">Month:</label>
-                        <select id="filterMonth">
-                            <option value="All">All Months</option>
-                            <option value="1">January</option>
-                            <option value="2">February</option>
-                            <option value="3">March</option>
-                            <option value="4">April</option>
-                            <option value="5">May</option>
-                            <option value="6">June</option>
-                            <option value="7">July</option>
-                            <option value="8">August</option>
-                            <option value="9">September</option>
-                            <option value="10">October</option>
-                            <option value="11">November</option>
-                            <option value="12">December</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="filterYear">Year:</label>
-                        <select id="filterYear">
-                            <option value="All">All Years</option>
-                        </select>
-                    </div>
-                    <button class="button" id="applyChartFilter">Apply Filter</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="calculator-overlay" id="calculatorOverlay">
-            <div class="calculator-card">
-                <div class="calculator-header">
-                    <h2>Calculator</h2>
-                    <button class="close-calculator-button" id="closeCalculatorButton">&times;</button>
-                </div>
-                <input type="text" class="calculator-display" id="calculatorDisplay" value="0" readonly>
                 <div class="calculator-buttons">
                     <button class="calc-btn clear" data-action="clear">C</button>
                     <button class="calc-btn backspace" data-action="backspace">←</button>
