@@ -194,8 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Money spent on "savings" increases totalSavingsAmountOverall (money moved INTO savings)
                     totalSavingsAmountOverall += amount;
                 } else if (entryType === 'gains' && (entryWhatKind === 'savings contribution' || entryWhatKind === 'savings')) {
-                    // Money gained from "savings contribution" also increases totalSavingsAmountOverall (money moved OUT of general funds, into savings)
-                    totalSavingsAmountOverall += amount; 
+                    // Money gained from "savings contribution" decreases totalSavingsAmountOverall (money moved OUT of general funds, into savings)
+                    totalSavingsAmountOverall -= amount;
                 }
             });
 
@@ -318,6 +318,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             }
+
+            renderUpcomingBills(); // Call this after allTransactionsData is populated and dashboard updated
         } catch (error) {
             console.error('Error fetching or processing CSV for dashboard:', error);
             // Display a user-friendly error message on the dashboard if data fails to load
@@ -383,6 +385,156 @@ document.addEventListener('DOMContentLoaded', () => {
             dashboardMonthButtons.forEach(btn => btn.classList.remove('active'));
         });
     }
+
+    // --- Upcoming Bills Logic ---
+
+    /**
+     * Calculates the next upcoming salary date based on a bi-weekly schedule starting June 20, 2025.
+     * @returns {Date} The date of the next salary payment.
+     */
+    function calculateNextSalaryDate() {
+        const today = new Date();
+        today.setHours(0,0,0,0); // Normalize today to start of day
+        const firstPayday = new Date('2025-06-20T00:00:00'); // Thursday, June 20, 2025 (user's given start date)
+        
+        let currentIterDate = new Date(firstPayday);
+
+        // Find the *first* payday that is greater than or equal to today
+        // This 'currentIterDate' will be the payday that 'covers' the current period's bills.
+        while (currentIterDate < today) {
+            currentIterDate.setDate(currentIterDate.getDate() + 14); // Add two weeks
+        }
+
+        // If 'currentIterDate' is exactly 'today', it means today is a payday.
+        // In this case, the "upcoming scheduled salary" for which bills will show
+        // is the *next* payday (two weeks from now), meaning bills due *after* today's payday.
+        // If 'currentIterDate' is in the future relative to 'today', then 'currentIterDate' is already the target.
+        if (currentIterDate.getTime() === today.getTime()) {
+             currentIterDate.setDate(currentIterDate.getDate() + 14);
+        }
+
+        return currentIterDate;
+    }
+
+    /**
+     * Determines which upcoming bills to display based on due dates and payment status.
+     * A bill is considered "paid" if a transaction exists within a 5-day window around its due date
+     * and its description/kind matches the bill name.
+     * @returns {Array<Object>} A list of bills to display.
+     */
+    function getUpcomingBills() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Normalize to start of day
+        const nextSalaryDate = calculateNextSalaryDate(); // The payday marking the end of the period for bill display
+
+        const upcomingBills = [];
+
+        BILLS.forEach(bill => {
+            let nextDueDate = new Date(today.getFullYear(), today.getMonth(), 1); // Start of current month for calculating due date
+
+            if (bill.dueDay === 'end') {
+                nextDueDate = new Date(today.getFullYear(), today.getMonth() + 1, 0); // Last day of current month
+            } else {
+                nextDueDate.setDate(bill.dueDay); // Set to specific day of current month
+            }
+
+            // If the calculated nextDueDate is in the past, move it to the next month/year
+            // This ensures we always get a future or present due date.
+            while (nextDueDate < today) {
+                nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+                if (bill.dueDay === 'end') {
+                    nextDueDate = new Date(nextDueDate.getFullYear(), nextDueDate.getMonth() + 1, 0);
+                } else {
+                    nextDueDate.setDate(bill.dueDay);
+                }
+            }
+            
+            // Define the payment window for this bill: 5 days before to 5 days after due date
+            const paymentWindowStart = new Date(nextDueDate);
+            paymentWindowStart.setDate(nextDueDate.getDate() - 5);
+            paymentWindowStart.setHours(0, 0, 0, 0);
+
+            const paymentWindowEnd = new Date(nextDueDate);
+            paymentWindowEnd.setDate(nextDueDate.getDate() + 5);
+            paymentWindowEnd.setHours(23, 59, 59, 999);
+
+            let isBillPaid = false;
+
+            // Check if there's a transaction marking this bill as paid
+            // Use allTransactionsData, which should be globally available and fully populated.
+            for (const transaction of allTransactionsData) {
+                const transactionDate = new Date(transaction.Date);
+                transactionDate.setHours(0, 0, 0, 0);
+
+                const transactionDescription = (transaction.Description || transaction['What kind?'] || '').toLowerCase();
+                const billNameLower = bill.name.toLowerCase();
+
+                // Check for date range, type 'expenses', and flexible name match
+                const transactionWithinWindow = (transactionDate >= paymentWindowStart && transactionDate <= paymentWindowEnd);
+                const isExpenseType = (transaction.Type && transaction.Type.toLowerCase() === 'expenses');
+                
+                // Flexible name matching: bill name in description OR description in bill name
+                const nameMatches = (transactionDescription.includes(billNameLower) || billNameLower.includes(transactionDescription));
+
+                if (transactionWithinWindow && isExpenseType && nameMatches) {
+                    isBillPaid = true;
+                    break; // Found a payment, no need to check further for this bill
+                }
+            }
+
+            // Only include bills whose due date falls within the current salary period (today to nextSalaryDate)
+            // AND have not been marked as paid by a transaction.
+            if (nextDueDate >= today && nextDueDate <= nextSalaryDate && !isBillPaid) {
+                upcomingBills.push({
+                    name: bill.name,
+                    dueDate: nextDueDate,
+                    amount: 'N/A' // Placeholder, as amount data is not provided in problem
+                });
+            }
+        });
+
+        // Sort bills by due date
+        upcomingBills.sort((a, b) => a.dueDate - b.dueDate);
+        return upcomingBills;
+    }
+
+    /**
+     * Renders the upcoming bills list on the dashboard.
+     */
+    function renderUpcomingBills() {
+        const upcomingBillsListDiv = document.getElementById('upcomingBillsList');
+        if (!upcomingBillsListDiv) return;
+
+        const billsToDisplay = getUpcomingBills();
+        upcomingBillsListDiv.innerHTML = ''; // Clear previous bills
+
+        if (billsToDisplay.length === 0) {
+            upcomingBillsListDiv.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 1rem;">No upcoming bills for this pay period.</p>';
+            return;
+        }
+
+        billsToDisplay.forEach(bill => {
+            const billItemDiv = document.createElement('div');
+            billItemDiv.classList.add('upcoming-bill-item');
+
+            const detailsDiv = document.createElement('div');
+            detailsDiv.classList.add('upcoming-bill-details');
+
+            const nameSpan = document.createElement('span');
+            nameSpan.classList.add('upcoming-bill-name');
+            nameSpan.textContent = bill.name;
+            detailsDiv.appendChild(nameSpan);
+
+            const dateSpan = document.createElement('span');
+            dateSpan.classList.add('upcoming-bill-date');
+            dateSpan.textContent = `Due: ${bill.dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+            detailsDiv.appendChild(dateSpan);
+            
+            billItemDiv.appendChild(detailsDiv);
+            upcomingBillsListDiv.appendChild(billItemDiv);
+        });
+    }
+
 
     // --- Generic Pagination Setup ---
     /**
@@ -459,21 +611,11 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function fetchAndProcessTransactions() {
         if (!document.getElementById('transactions-page')) return;
-        const transactionsListDiv = document.getElementById('transactionsList');
-
-        // Show loading message before fetching
-        if (transactionsListDiv) {
-            transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">Loading transactions...</p>';
-        }
-
         try {
             const response = await fetch(CSV_URL);
-            // Check if the response is OK (status 200)
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
             const csv = await response.text();
             allTransactionsData = parseCSV(csv); // Store raw data globally
+
 
             populateCategoryFilter();
             const today = new Date();
@@ -488,10 +630,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             currentTransactionsPage = 1; // Reset page for initial load
-            renderTransactions(initialMonth); // Initial render with current month
+            renderTransactions(initialMonth); // Initial render
         } catch (error) {
             console.error('Error fetching or processing CSV for transactions:', error);
-            if (transactionsListDiv) transactionsListDiv.innerHTML = `<p style="text-align: center; color: var(--accent-red); padding: 2rem;">Error loading transactions: ${error.message}. Please try again.</p>`;
+            const transactionsListDiv = document.getElementById('transactionsList');
+            if (transactionsListDiv) transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--accent-red); padding: 2rem;">Error loading transactions.</p>';
         }
     }
 
@@ -695,14 +838,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isSavingsEntry = (entryWhatKind === 'savings' || entryWhatKind === 'savings contribution') && !isNaN(amount);
 
                 if (isSavingsEntry) {
-                    // 'Gains' of 'savings contribution' or 'savings' means money MOVED INTO savings (increases savings)
+                    // Logic based on previous understanding of user's CSV data:
+                    // 'Gains' of 'savings contribution' or 'savings' means money MOVED OUT of general funds into savings (decreases general funds, increases savings)
                     if (entryType === 'gains') {
-                        overallTotalSavings += amount; 
+                        overallTotalSavings += amount; // Treat this as an increase to savings
                     }
                     // 'Expenses' of 'savings' means money MOVED OUT of general expenses to savings (increases savings)
                     else if (entryType === 'expenses') {
-                        overallTotalSavings += amount;
+                        overallTotalSavings += amount; // Treat this as an increase to savings
                     }
+                    // If you have "withdrawal from savings" that is a "gain" to general funds,
+                    // you might need another condition like:
+                    // else if (entryType === 'gains' && entryWhatKind === 'savings withdrawal') {
+                    //     overallTotalSavings -= amount;
+                    // }
                 }
                 return isSavingsEntry; // Only keep these entries for display in savings list
             });
@@ -789,6 +938,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     categoryIconDiv.textContent = '📥'; // In-box for money going into savings
                     amountSpan.classList.add('gain'); // Treat as a positive for overall savings calculation view
                 }
+                // Add more conditions if there are explicit "savings withdrawals" that are type "gains"
+                // else if (lowerCaseType === 'gains' && lowerCaseWhatKind === 'savings withdrawal') {
+                //     categoryIconDiv.classList.add('category-expense'); // Represents a withdrawal
+                //     categoryIconDiv.textContent = '⬇️'; // Down arrow for money coming out
+                //     amountSpan.classList.add('expense');
+                // }
+
 
                 itemDiv.appendChild(categoryIconDiv);
                 
@@ -1047,7 +1203,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(filterOptionsContainer) filterOptionsContainer.style.display = 'none';
             });
         });
-        fetchAndProcessTransactions(); // Initial fetch and render for transactions page
+        fetchAndProcessTransactions(); // Initial fetch and render
     } else if (document.getElementById('savings-page')) {
         updateSavingsPage();
     }
