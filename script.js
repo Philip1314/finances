@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Updated CSV_URL and GOOGLE_FORM_URL as per user request
-    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS6QS-O5TLQmVn8WMeyfSVmLfJPtL11TwmnZn4NVgklXKFRbJwK5A7jiPYU1srHVDxUDrjr-t86gj4-J3QM8uV7m8iJN9wxlcPJA/pub?output=csv';
+    // Reverted to the original CSV_URL from the user's initial script (1).js for stability.
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS6QS-O5TLQmVn8WMeyfSVmLfJPtL11TwmnZn4NVgklXKFRbJwK5A7jiPYU1srHVDxUDvI8KIXBqnNx/pub?output=csv';
     const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSe4-6PXN21Zrnexp8bUbdU5IhaokIEoUKwsFeRU0yYzllcPJA/viewform?usp=header';
 
     // --- Pagination Globals ---
@@ -9,6 +9,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSavingsPage = 1;
     let allTransactionsData = []; // Store all fetched data for consistent filtering and pagination
     let allSavingsDataGlobal = []; // Store all fetched savings data for pagination
+
+    // --- Upcoming Bills Data ---
+    const BILLS = [
+        { name: 'Lazada Paylater', dueDay: 16 },
+        { name: 'Atome Card', dueDay: 2 },
+        { name: 'Unionbank Card', dueDay: 10 },
+        { name: 'Maya Credit', dueDay: 11 },
+        { name: 'Netflix', dueDay: 'end' }, // Special handling for end of month
+        { name: 'Google One', dueDay: 29 },
+        { name: 'Converge', dueDay: 20 }
+    ];
 
     /**
      * Parses a CSV string into an array of objects.
