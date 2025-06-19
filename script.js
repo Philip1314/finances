@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Updated CSV_URL and GOOGLE_FORM_URL as per user request
-    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS6QS-O5TLQmVn8WMeyfSVmLfJPtL11TwmnZn4NVgklXKFRbJwK5A7jiPYU1srHVDxUDvI8KIXBqnNx/pub?output=csv';
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vS6QS-O5TLQmVn8WMeyfSVmLfJPtL11TwmnZn4NVgklXKFRbJwK5A7jiPYU1srHVDxUDrjr-t86gj4-J3QM8uV7m8iJN9wxlcPJA/pub?output=csv';
     const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSe4-6PXN21Zrnexp8bUbdU5IhaokIEoUKwsFeRU0yYzllcPJA/viewform?usp=header';
 
     // --- Pagination Globals ---
@@ -9,17 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSavingsPage = 1;
     let allTransactionsData = []; // Store all fetched data for consistent filtering and pagination
     let allSavingsDataGlobal = []; // Store all fetched savings data for pagination
-
-    // --- Upcoming Bills Data (Removed as per user request) ---
-    // const BILLS = [
-    //     { name: 'Lazada Paylater', dueDay: 16 },
-    //     { name: 'Atome Card', dueDay: 2 },
-    //     { name: 'Unionbank Card', dueDay: 10 },
-    //     { name: 'Maya Credit', dueDay: 11 },
-    //     { name: 'Netflix', dueDay: 'end' }, // Special handling for end of month
-    //     { name: 'Google One', dueDay: 29 },
-    //     { name: 'Converge', dueDay: 20 }
-    // ];
 
     /**
      * Parses a CSV string into an array of objects.
@@ -205,8 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Money spent on "savings" increases totalSavingsAmountOverall (money moved INTO savings)
                     totalSavingsAmountOverall += amount;
                 } else if (entryType === 'gains' && (entryWhatKind === 'savings contribution' || entryWhatKind === 'savings')) {
-                    // Money gained from "savings contribution" decreases totalSavingsAmountOverall (money moved OUT of general funds, into savings)
-                    totalSavingsAmountOverall += amount; // This should be an addition to savings, not a subtraction from general funds for overall savings calculation
+                    // Money gained from "savings contribution" also increases totalSavingsAmountOverall (money moved OUT of general funds, into savings)
+                    totalSavingsAmountOverall += amount; 
                 }
             });
 
@@ -329,8 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             }
-
-            // renderUpcomingBills(); // Removed call to render upcoming bills
         } catch (error) {
             console.error('Error fetching or processing CSV for dashboard:', error);
             // Display a user-friendly error message on the dashboard if data fails to load
@@ -396,13 +383,6 @@ document.addEventListener('DOMContentLoaded', () => {
             dashboardMonthButtons.forEach(btn => btn.classList.remove('active'));
         });
     }
-
-    // --- Upcoming Bills Logic (Removed as per user request) ---
-
-    // function calculateNextSalaryDate() { ... }
-    // function getUpcomingBills() { ... }
-    // function renderUpcomingBills() { ... }
-
 
     // --- Generic Pagination Setup ---
     /**
@@ -479,11 +459,21 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     async function fetchAndProcessTransactions() {
         if (!document.getElementById('transactions-page')) return;
+        const transactionsListDiv = document.getElementById('transactionsList');
+
+        // Show loading message before fetching
+        if (transactionsListDiv) {
+            transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">Loading transactions...</p>';
+        }
+
         try {
             const response = await fetch(CSV_URL);
+            // Check if the response is OK (status 200)
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const csv = await response.text();
             allTransactionsData = parseCSV(csv); // Store raw data globally
-
 
             populateCategoryFilter();
             const today = new Date();
@@ -498,11 +488,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
             currentTransactionsPage = 1; // Reset page for initial load
-            renderTransactions(initialMonth); // Initial render
+            renderTransactions(initialMonth); // Initial render with current month
         } catch (error) {
             console.error('Error fetching or processing CSV for transactions:', error);
-            const transactionsListDiv = document.getElementById('transactionsList');
-            if (transactionsListDiv) transactionsListDiv.innerHTML = '<p style="text-align: center; color: var(--accent-red); padding: 2rem;">Error loading transactions.</p>';
+            if (transactionsListDiv) transactionsListDiv.innerHTML = `<p style="text-align: center; color: var(--accent-red); padding: 2rem;">Error loading transactions: ${error.message}. Please try again.</p>`;
         }
     }
 
@@ -515,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
         categoryFilterDropdown.innerHTML = '<option value="">All Categories</option>';
         const uniqueCategories = new Set();
         allTransactionsData.forEach(entry => {
-            if (entry['What kind?']) uniqueCategories.add(entry['What kind'].trim());
+            if (entry['What kind?']) uniqueCategories.add(entry['What kind?'].trim());
             if (entry.Type) uniqueCategories.add(entry.Type.trim()); // Add "Gains" and "Expenses" as main types
         });
 
@@ -706,7 +695,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isSavingsEntry = (entryWhatKind === 'savings' || entryWhatKind === 'savings contribution') && !isNaN(amount);
 
                 if (isSavingsEntry) {
-                    // Logic based on previous understanding of user's CSV data:
                     // 'Gains' of 'savings contribution' or 'savings' means money MOVED INTO savings (increases savings)
                     if (entryType === 'gains') {
                         overallTotalSavings += amount; 
@@ -1059,7 +1047,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(filterOptionsContainer) filterOptionsContainer.style.display = 'none';
             });
         });
-        fetchAndProcessTransactions(); // Initial fetch and render
+        fetchAndProcessTransactions(); // Initial fetch and render for transactions page
     } else if (document.getElementById('savings-page')) {
         updateSavingsPage();
     }
